@@ -57,3 +57,6 @@ typings/
 # dotenv environment variables file
 .env
 
+# Test Server Excludes
+.ropeproject
+__pycache__
