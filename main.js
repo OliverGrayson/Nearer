@@ -66,11 +66,13 @@ app.on('activate', () => {
 const player = require('./player'); // Video player.
 const io = require('socket.io-client'); // SocketIO client.
 
+let play;
+
 // Make WebSockets connection to server.
 const socket = io('http://localhost:5000');
 
-function playVideo(vid) {
-  const play = player.play(vid);
+function playVideo(vid, time) {
+  play = player.play(vid, time);
 
   play.on('info', () => {
     const info = player.getInfo();
@@ -78,8 +80,12 @@ function playVideo(vid) {
     mainWindow.webContents.send('vid-info', info);
   });
 
+  play.on('play', () => {
+    socket.emit('playing');
+  });
+
   play.on('close', () => {
-    socket.emit('done', { data: 'Video played.' });
+    socket.emit('done');
   });
 }
 
@@ -88,7 +94,24 @@ socket.on('connect', () => {
   socket.emit('connect_event', { data: 'Successful connection to server.' });
 });
 
-socket.on('play', (vid) => {
-  console.log('Play request:', vid);
-  playVideo(vid);
+socket.on('server_connect', () => {
+  console.log('Server connection successful.');
+});
+
+socket.on('play', (req) => {
+  console.log('Play request:', req);
+  playVideo(`https://youtube.com/watch?v=${req.video}`, req.start);
+});
+
+socket.on('skip', () => {
+  if (play) {
+    player.stop();
+  }
+});
+
+socket.on('pause', () => {
+  socket.emit('paused', player.getTime());
+  if (play) {
+    player.stop();
+  }
 });

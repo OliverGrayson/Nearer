@@ -9,6 +9,7 @@ const { Decoder } = require('lame');
 let video = null;
 let audioStream = null;
 let speaker = null;
+let start = null;
 module.exports.video = video;
 
 function isPlaying() {
@@ -21,7 +22,7 @@ function isLoading() {
 }
 module.exports.isLoading = isLoading;
 
-function play(vid) {
+function play(vid, time) {
   if (video == null) {
     const emitter = new EventEmitter();
 
@@ -40,7 +41,11 @@ function play(vid) {
     });
 
     const stream = through();
-    audioStream = ffmpeg(video).format('mp3').pipe(stream).pipe(Decoder());
+    audioStream = ffmpeg(video)
+      .seekInput(time / 1000)
+      .format('mp3')
+      .pipe(stream)
+      .pipe(Decoder());
 
     audioStream.on('format', (format) => {
       // Create a new speaker with the given format.
@@ -51,17 +56,21 @@ function play(vid) {
         video = null;
         speaker = null;
         audioStream = null;
+        start = null;
         emitter.emit('close');
       });
 
       // Pipe the decoded audio into the speaker.
       audioStream = audioStream.pipe(speaker);
+      start = Date.now() - time;
+      emitter.emit('play');
     });
 
     // Audio Stream Termination
     audioStream.on('finish', () => {
       if (isLoading()) {
         speaker = null;
+        start = null;
         emitter.emit('close');
       }
     });
@@ -90,10 +99,12 @@ function stop() {
     speaker.end();
     audioStream.end();
     video = null;
+    start = null;
   } else if (isLoading()) {
     console.log('Stop requested while loading. Cleaning up.');
     audioStream.end();
     video = null;
+    start = null;
   } else {
     console.log('Nothing is currently video.');
   }
@@ -107,3 +118,12 @@ function getInfo() {
   return video.info;
 }
 module.exports.getInfo = getInfo;
+
+function getTime() {
+  console.log(start);
+  if (start == null) {
+    return 0;
+  }
+  return (Date.now() - start);
+}
+module.exports.getTime = getTime;
