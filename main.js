@@ -27,7 +27,7 @@ function createWindow() {
   }));
 
   // Open the DevTools.
-  // mainWindow.webContents.openDevTools();
+  mainWindow.webContents.openDevTools();
 
   // Emitted when the window is closed.
   mainWindow.on('closed', () => {
@@ -62,3 +62,33 @@ app.on('activate', () => {
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.
+
+const player = require('./player'); // Video player.
+const io = require('socket.io-client'); // SocketIO client.
+
+// Make WebSockets connection to server.
+const socket = io('http://localhost:5000');
+
+function playVideo(vid) {
+  const play = player.play(vid);
+
+  play.on('info', () => {
+    const info = player.getInfo();
+    console.log(info);
+    mainWindow.webContents.send('vid-info', info);
+  });
+
+  play.on('close', () => {
+    socket.emit('done', { data: 'Video played.' });
+  });
+}
+
+socket.on('connect', () => {
+  console.log('Connected to server.');
+  socket.emit('connect_event', { data: 'Successful connection to server.' });
+});
+
+socket.on('play', (vid) => {
+  console.log('Play request:', vid);
+  playVideo(vid);
+});
