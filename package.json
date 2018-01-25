@@ -9,16 +9,19 @@
   "author": "Ethan Jaszewski",
   "license": "MPL-2.0",
   "dependencies": {
-    "electron": "^1.7.10",
+    "electron": "^1.8.1",
     "fluent-ffmpeg": "^2.1.2",
+    "jquery": "^3.3.0",
     "lame": "^1.2.4",
+    "moment": "^2.20.1",
     "socket.io-client": "^2.0.4",
     "speaker": "^0.4.0",
     "through2": "^2.0.3",
-    "ytdl-core": "^0.18.5"
+    "ytdl-core": "^0.18.7"
   },
   "devDependencies": {
-    "eslint": "^4.14.0",
+    "electron-rebuild": "^1.7.3",
+    "eslint": "^4.15.0",
     "eslint-config-airbnb-base": "^12.1.0",
     "eslint-plugin-import": "^2.8.0"
   }

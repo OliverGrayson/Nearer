@@ -71,8 +71,8 @@ function play(vid, time) {
       if (isLoading()) {
         speaker = null;
         start = null;
-        emitter.emit('close');
       }
+      emitter.emit('close');
     });
 
     // An error occurred.
@@ -120,7 +120,6 @@ function getInfo() {
 module.exports.getInfo = getInfo;
 
 function getTime() {
-  console.log(start);
   if (start == null) {
     return 0;
   }
