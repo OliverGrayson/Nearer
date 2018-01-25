@@ -5,6 +5,17 @@ const { app, BrowserWindow, ipcMain } = electron;
 const path = require('path');
 const url = require('url');
 
+/* Necessary intialization code for disposal. */
+const player = require('./player'); // Video player.
+const io = require('socket.io-client'); // SocketIO client.
+
+// Make WebSockets connection to server.
+let socket = io('http://localhost:5000', {
+  reconnection: true,
+  reconnectionDelay: 500,
+  reconnectionAttempts: 10,
+});
+
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 let mainWindow;
@@ -31,10 +42,15 @@ function createWindow() {
 
   // Emitted when the window is closed.
   mainWindow.on('closed', () => {
-    // Dereference the window object, usually you would store windows
-    // in an array if your app supports multi windows, this is the time
-    // when you should delete the corresponding element.
+    // Stop the player and close the socket.
+    player.stop();
+    socket.disconnect();
+
+    // Dereference window object.
     mainWindow = null;
+
+    // Quit the app.
+    app.quit();
   });
 }
 
@@ -43,33 +59,12 @@ function createWindow() {
 // Some APIs can only be used after this event occurs.
 app.on('ready', createWindow);
 
-// Quit when all windows are closed.
-app.on('window-all-closed', () => {
-  // On OS X it is common for applications and their menu bar
-  // to stay active until the user quits explicitly with Cmd + Q
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
-});
-
-app.on('activate', () => {
-  // On OS X it's common to re-create a window in the app when the
-  // dock icon is clicked and there are no other windows open.
-  if (mainWindow === null) {
-    createWindow();
-  }
-});
-
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and require them here.
-
-const player = require('./player'); // Video player.
-const io = require('socket.io-client'); // SocketIO client.
+// Nearer code.
 
 let play;
-let socket;
 let pingSent;
 let pingTimes = [];
+let pingInterval;
 
 function playVideo(vid, time) {
   let interval;
@@ -99,18 +94,6 @@ function playVideo(vid, time) {
   }
 }
 
-// Make WebSockets connection to server.
-socket = io('http://localhost:5000', {
-  reconnection: true,
-  reconnectionDelay: 500,
-  reconnectionAttempts: 10,
-});
-
-setInterval(() => {
-  pingSent = Date.now();
-  socket.emit('cl_ping');
-}, 1000);
-
 socket.on('sv_pong', () => {
   const latency = Date.now() - pingSent;
   pingTimes.push(latency);
@@ -121,12 +104,22 @@ socket.on('sv_pong', () => {
 
 socket.on('connect', () => {
   console.log('Connected to server.');
+
+  pingInterval = setInterval(() => {
+    pingSent = Date.now();
+    socket.emit('cl_ping');
+  }, 1000);
+
   mainWindow.webContents.send('connected');
   socket.emit('connect_event', { data: 'Successful connection to server.' });
 });
 
 socket.on('disconnect', () => {
-  mainWindow.webContents.send('disconnected');
+  clearInterval(pingInterval);
+  // This can get called after the window is closed.
+  if (mainWindow) {
+    mainWindow.webContents.send('disconnected');
+  }
 });
 
 socket.on('status', (status) => {
