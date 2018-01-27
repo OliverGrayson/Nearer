@@ -10,7 +10,7 @@ const player = require('./player'); // Video player.
 const io = require('socket.io-client'); // SocketIO client.
 
 // Make WebSockets connection to server.
-let socket = io('http://localhost:5000', {
+const socket = io('http://localhost:5000', {
   reconnection: true,
   reconnectionDelay: 500,
   reconnectionAttempts: 10,
@@ -19,6 +19,7 @@ let socket = io('http://localhost:5000', {
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 let mainWindow;
+let closed = false;
 
 function createWindow() {
   // Create the browser window.
@@ -43,6 +44,7 @@ function createWindow() {
   // Emitted when the window is closed.
   mainWindow.on('closed', () => {
     // Stop the player and close the socket.
+    closed = true;
     player.stop();
     socket.disconnect();
 
@@ -64,7 +66,11 @@ app.on('ready', createWindow);
 let play;
 let pingSent;
 let pingTimes = [];
-let pingInterval;
+
+setInterval(() => {
+  pingSent = Date.now();
+  socket.emit('cl_ping');
+}, 1000);
 
 function playVideo(vid, time) {
   let interval;
@@ -73,7 +79,6 @@ function playVideo(vid, time) {
   if (play) {
     play.on('info', () => {
       const info = player.getInfo();
-      console.log(info);
       mainWindow.webContents.send('vid-info', info);
     });
 
@@ -87,7 +92,10 @@ function playVideo(vid, time) {
     });
 
     play.on('close', () => {
-      mainWindow.webContents.send('vid-done');
+      // This can be send after the window is closed.
+      if (!closed) {
+        mainWindow.webContents.send('vid-done');
+      }
       socket.emit('done');
       clearInterval(interval);
     });
@@ -99,25 +107,20 @@ socket.on('sv_pong', () => {
   pingTimes.push(latency);
   pingTimes = pingTimes.slice(-30); // keep last 30 samples
   const avg = pingTimes.reduce((a, b) => a + b, 0.0) / pingTimes.length;
-  mainWindow.webContents.send('ping', Math.round(avg * 10) / 10);
+  // This can get called after the window is closed.
+  if (!closed) {
+    mainWindow.webContents.send('ping', Math.round(avg * 10) / 10);
+  }
 });
 
 socket.on('connect', () => {
-  console.log('Connected to server.');
-
-  pingInterval = setInterval(() => {
-    pingSent = Date.now();
-    socket.emit('cl_ping');
-  }, 1000);
-
   mainWindow.webContents.send('connected');
   socket.emit('connect_event', { data: 'Successful connection to server.' });
 });
 
 socket.on('disconnect', () => {
-  clearInterval(pingInterval);
   // This can get called after the window is closed.
-  if (mainWindow) {
+  if (!closed) {
     mainWindow.webContents.send('disconnected');
   }
 });
@@ -127,7 +130,6 @@ socket.on('status', (status) => {
 });
 
 socket.on('play', (req) => {
-  console.log(`Play request: ${req}`);
   playVideo(`https://youtube.com/watch?v=${req.video}`, req.start);
 });
 

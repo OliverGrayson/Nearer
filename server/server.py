@@ -41,7 +41,7 @@ def playNext():
 
         socketio.emit('status', getStatus())
         emitPlay()
-        
+
         return True
     else:
         socketio.emit('status', getStatus())
@@ -51,8 +51,8 @@ def emitPlay(data=None):
     if data == None:
         global playing
         global playtime
-        data = dict({ 'video': str(playing), 'start': playtime })
-    if data != None:
+        data = dict({ 'video': playing, 'start': playtime })
+    if data['video'] != None:
         print('Emitting play request:', data)
         socketio.emit('play', data)
 
@@ -106,9 +106,9 @@ def paused(timestamp):
 def resumeQueue():
     global running
     print('Resume requested.')
-    running = True
-
-    emitPlay()
+    if not running:
+        running = True
+        emitPlay()
     socketio.emit('status', getStatus())
 
     return json.dumps({ "message": "Success!", "queue": list(queue.queue)})

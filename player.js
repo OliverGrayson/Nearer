@@ -77,13 +77,11 @@ function play(vid, time) {
 
     // An error occurred.
     audioStream.on('error', (error) => {
-      console.log('Failed to play YouTube video.', error.toString());
       emitter.emit('error', error);
     });
 
     // The stream was closed externally.
     audioStream.on('close', (error) => {
-      console.log('Closing audio stream on request.', error.toString());
       emitter.emit('error', error);
     });
 
@@ -95,18 +93,16 @@ module.exports.play = play;
 
 function stop() {
   if (isPlaying()) {
-    console.log('Stop requested while playing. Stopping audio.');
     speaker.end();
     audioStream.end();
     video = null;
     start = null;
   } else if (isLoading()) {
-    console.log('Stop requested while loading. Cleaning up.');
     audioStream.end();
     video = null;
     start = null;
   } else {
-    console.log('Nothing is currently video.');
+    // If nothing is playing.
   }
 }
 module.exports.stop = stop;
