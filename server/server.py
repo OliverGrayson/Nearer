@@ -13,8 +13,9 @@ socketio = SocketIO(app, async_mode=None)
 queue = Queue()
 playing = None
 running = True
-client_playing = False
 playtime = 0
+client_playing = False
+client_connected = False
 
 thread = None
 thread_lock = Lock()
@@ -28,6 +29,7 @@ def limit_remote_addr():
        local.fullmatch(request.remote_addr) == None and \
        request.remote_addr != '127.0.0.1':
         abort(403)  # Forbidden
+        print(request.remote_addr)
 
 def playNext():
     global thread
@@ -70,6 +72,12 @@ def getStatus():
         'current': playing,
         'status': status
     })
+
+@app.route('/status')
+def queueStatus():
+    status = getStatus()
+    status.update({'client_connected': client_connected})
+    return json.dumps(status)
 
 @app.route('/add')
 def addToQueue():
@@ -139,12 +147,20 @@ def connection(msg):
 @socketio.on('connect')
 def connect():
     print('Client connected.')
+    global client_connected
+    client_connected = True
 
     emit('server_connect')
     emit('status', getStatus())
 
     if playing or not queue.empty():
         emitPlay()
+
+@socketio.on('disconnect')
+def disconnect():
+    print('Client disconnected.')
+    global client_connected
+    client_connected = False
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)
