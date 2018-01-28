@@ -16,6 +16,12 @@ const socket = io('http://localhost:5000', {
   reconnectionAttempts: 10,
 });
 
+let pingSent;
+const pingInterval = setInterval(() => {
+  pingSent = Date.now();
+  socket.emit('cl_ping');
+}, 1000);
+
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 let mainWindow;
@@ -43,10 +49,14 @@ function createWindow() {
 
   // Emitted when the window is closed.
   mainWindow.on('closed', () => {
+    // Stop pinging boi.
+    clearInterval(pingInterval);
+
     // Stop the player and close the socket.
     closed = true;
     player.stop();
     socket.disconnect();
+
 
     // Dereference window object.
     mainWindow = null;
@@ -64,13 +74,7 @@ app.on('ready', createWindow);
 // Nearer code.
 
 let play;
-let pingSent;
 let pingTimes = [];
-
-setInterval(() => {
-  pingSent = Date.now();
-  socket.emit('cl_ping');
-}, 1000);
 
 function playVideo(vid, time) {
   let interval;
