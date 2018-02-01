@@ -41,11 +41,18 @@ function play(vid, time) {
     });
 
     const stream = through();
-    audioStream = ffmpeg(video)
-      .seekInput(time / 1000)
-      .format('mp3')
-      .pipe(stream)
-      .pipe(Decoder());
+    if (time >= 6000) {
+      audioStream = ffmpeg(video)
+        .seekInput(time / 1000)
+        .format('mp3')
+        .pipe(stream)
+        .pipe(Decoder());
+    } else {
+      audioStream = ffmpeg(video)
+        .format('mp3')
+        .pipe(stream)
+        .pipe(Decoder());
+    }
 
     audioStream.on('format', (format) => {
       // Create a new speaker with the given format.
