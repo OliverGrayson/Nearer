@@ -4,12 +4,12 @@
   "description": "A client for Blacker house's speaker system (Nearer).",
   "main": "main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "postinstall": "electron-builder install-app-deps"
   },
   "author": "Ethan Jaszewski",
   "license": "MPL-2.0",
   "dependencies": {
-    "electron": "^1.7.11",
     "fluent-ffmpeg": "^2.1.2",
     "jquery": "^3.3.1",
     "lame": "^1.2.4",
@@ -20,7 +20,8 @@
     "ytdl-core": "^0.18.7"
   },
   "devDependencies": {
-    "electron-rebuild": "^1.7.3",
+    "electron": "^1.7.11",
+    "electron-builder": "^19.55.3",
     "eslint": "^4.16.0",
     "eslint-config-airbnb-base": "^12.1.0",
     "eslint-plugin-import": "^2.8.0"
