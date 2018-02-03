@@ -118,8 +118,11 @@ socket.on('sv_pong', () => {
 });
 
 socket.on('connect', () => {
-  mainWindow.webContents.send('connected');
   socket.emit('connect_event', { data: 'Successful connection to server.' });
+});
+
+socket.on('server_connect', () => {
+  mainWindow.webContents.send('connected');
 });
 
 socket.on('disconnect', () => {
@@ -151,5 +154,7 @@ socket.on('pause', () => {
 });
 
 ipcMain.on('reconnect', () => {
+  socket.disconnect();
+  player.stop();
   socket.connect();
 });
