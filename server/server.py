@@ -1,6 +1,7 @@
 from queue import Queue
 from flask import Flask, request, abort
 from flask_socketio import SocketIO, emit
+from functools import wraps
 from threading import Lock
 import json
 import re
@@ -8,6 +9,18 @@ import re
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app, async_mode=None)
+
+# Localhost Only
+def check_auth():
+    return True
+
+def local_only(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if not request.remote_addr == '127.0.0.1':
+            abort(403) # Forbidden
+        return f(*args, **kwargs)
+    return decorated
 
 # Play Queue State Variables
 queue = Queue()
@@ -20,13 +33,12 @@ client_connected = False
 thread = None
 thread_lock = Lock()
 
-local = re.compile('192.168.[0-9].[0-9]{3}')
+# IP limiting regexes
 caltech = re.compile('131.215.[0-9]{1,3}.[0-9]{1,3}')
 
 @app.before_request
 def limit_remote_addr():
     if caltech.fullmatch(request.remote_addr) == None and \
-       local.fullmatch(request.remote_addr) == None and \
        request.remote_addr != '127.0.0.1':
         abort(403)  # Forbidden
         print(request.remote_addr)
@@ -80,6 +92,7 @@ def queueStatus():
     return json.dumps(status)
 
 @app.route('/add')
+@local_only
 def addToQueue():
     vid = request.args.get('vid', '')
     if vid == '':
@@ -163,4 +176,4 @@ def disconnect():
     client_connected = False
 
 if __name__ == '__main__':
-    socketio.run(app, debug=True)
+    socketio.run(app, host='0.0.0.0', port=5000)
