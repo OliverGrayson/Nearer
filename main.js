@@ -10,7 +10,7 @@ const player = require('./player'); // Video player.
 const io = require('socket.io-client'); // SocketIO client.
 
 // Make WebSockets connection to server.
-const socket = io('http://localhost:5000', {
+const socket = io('http://blacker.caltech.edu:27036/', {
   reconnection: true,
   reconnectionDelay: 500,
   reconnectionAttempts: 10,
@@ -31,8 +31,9 @@ function createWindow() {
   // Create the browser window.
   mainWindow = new BrowserWindow({
     width: 800,
-    height: 215,
+    height: 190,
     resizable: false,
+    useContentSize: true,
   });
 
   mainWindow.setMenu(null);
@@ -56,7 +57,6 @@ function createWindow() {
     closed = true;
     player.stop();
     socket.disconnect();
-
 
     // Dereference window object.
     mainWindow = null;
