@@ -52,6 +52,7 @@ function play(vid, time) {
         .format('mp3')
         .pipe(stream)
         .pipe(Decoder());
+	  console.log(audioStream);
     }
 
     audioStream.on('format', (format) => {
@@ -79,16 +80,17 @@ function play(vid, time) {
         speaker = null;
         start = null;
       }
-      emitter.emit('close');
     });
 
     // An error occurred.
     audioStream.on('error', (error) => {
+	  console.log('Audio stream error');
       emitter.emit('error', error);
     });
 
     // The stream was closed externally.
     audioStream.on('close', (error) => {
+	  console.log('Audio stream error');
       emitter.emit('error', error);
     });
 
