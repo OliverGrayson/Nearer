@@ -60,3 +60,5 @@ typings/
 # Test Server Excludes
 .ropeproject
 __pycache__
+
+**/.DS_Store
