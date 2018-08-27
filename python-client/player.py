@@ -4,8 +4,7 @@ from interval import *
 import requests
 import time
 
-STATUS_URL = "http://dabney.caltech.edu:27036/status"
-VIDEO = False # TODO: auto-detect if an HDMI is plugged in
+STATUS_URL = "http://blacker.caltech.edu:27036/status"
 
 player = None
 player_start_time = None
@@ -15,10 +14,7 @@ url_cache = {}
 def get_player_url(id):
     if id not in url_cache:
         video = pafy.new("https://youtube.com/watch?v=" + id)
-        if VIDEO:
-            target = video.getbest()
-        else:
-            target = video.getbestaudio()
+        target = video.getbestaudio()
         url_cache[id] = target.url
     return url_cache[id]
 
