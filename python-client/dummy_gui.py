@@ -21,8 +21,21 @@ def load_tk_image(path, max_width=None, max_height=None):
         img = Image.open(path)
     old_width = img.width
     old_height = img.height
-    # TODO: write to calculate which is more prohibitive and resize accordingly
-    width = max_width
+    wh_ratio = old_width / old_height
+
+    assert (max_height or max_width)
+    if max_width and max_height:
+        desired_wh_ratio = max_width / max_height
+        if desired_wh_ratio >= wh_ratio:
+            max_height = None # picture is WIDE (so use max_width)
+        else:
+            max_width = None # picture is TALL (so use max_height)
+    if max_width:
+        width = max_width
+        height = width / wh_ratio
+    else:
+        height = max_height
+        width = height * wh_ratio
 
     height = int(old_height * max_width / old_width)
     img = img.resize((width, height))
