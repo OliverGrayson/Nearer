@@ -196,7 +196,7 @@ def on_disconnect():
     connected = False
     connection_status.config(text="☒", foreground="#aa0000")
 
-socket = SocketIO('localhost', 27036)
+socket = SocketIO('blacker.caltech.edu', 27036)
 socket.on('disconnect', on_disconnect)
 socket.on('status', connect_augment(on_status))
 socket.on('sv_pong', connect_augment(pong))

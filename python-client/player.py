@@ -39,7 +39,7 @@ def play(id, start_time=0):
     current_vid_data = get_vid_data(id)
     play_url = current_vid_data[0]
 
-    args = ["-o", "both"] if VIDEO else ["-o", "local"]
+    args = ["-o", "local"]
     if start_time != 0:
         args += ["--pos", get_timestamp(start_time)]
 
