@@ -9,14 +9,14 @@ STATUS_URL = "http://blacker.caltech.edu:27036/status"
 player = None
 player_start_time = None
 player_stop_time = 0
+current_vid_data = None
 
-url_cache = {}
-def get_player_url(id):
-    if id not in url_cache:
+vid_data_cache = {}
+def get_vid_data(id):
+    if id not in vid_data_cache:
         video = pafy.new("https://youtube.com/watch?v=" + id)
-        target = video.getbestaudio()
-        url_cache[id] = target.url
-    return url_cache[id]
+        vid_data_cache[id] = (video.getbestaudio().url, video.title, video.duration, video.bigthumb)
+    return vid_data_cache[id]
 
 def prep_queue():
     f = requests.get(STATUS_URL)
@@ -25,21 +25,23 @@ def prep_queue():
     if data.get("current") is not None:
         to_download.add(data["current"])
     for id in to_download:
-        get_player_url(id) # ensure we have a player url for everybody in the queue
+        get_vid_data(id) # ensure we have a player url for everybody in the queue
 set_interval(prep_queue, 10)
 
+def get_timestamp(seconds):
+    hours = seconds // 3600
+    seconds -= 3600 * hours
+    minutes = seconds // 60
+    seconds -= 60 * minutes
+    return "{:02}:{:02}:{:02}".format(hours, minutes, seconds)
+
 def play(id, start_time=0):
-    play_url = get_player_url(id)
+    current_vid_data = get_vid_data(id)
+    play_url = current_vid_data[0]
 
     args = ["-o", "both"] if VIDEO else ["-o", "local"]
     if start_time != 0:
-        seconds = start_time
-        hours = seconds // 3600
-        seconds -= 3600 * hours
-        minutes = seconds // 60
-        seconds -= 60 * minutes
-        timestamp = "{}:{}:{}".format(hours, minutes, seconds)
-        args += ["--pos", timestamp]
+        args += ["--pos", get_timestamp(start_time)]
 
     global player
     global player_start_time
@@ -51,6 +53,7 @@ def play(id, start_time=0):
 def stop():
     global player
     global player_stop_time
+    global current_vid_data
 
     if player is not None:
         try:
@@ -60,6 +63,7 @@ def stop():
 
         tmp = player
         player = None
+        current_vid_data = None
         tmp.quit() # mark player as dead before we block on quitting it
 
 def stop_if_done():
