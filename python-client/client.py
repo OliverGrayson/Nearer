@@ -54,7 +54,7 @@ INFO_FONT = "Helvetica 18"
 MINOR_INFO_FONT = "Helvetica 12"
 BUTTON_FONT = "Helvetica 22"
 MINOR_BUTTON_FONT = "Helvetica 12"
-CONNECTION_STATUS_FONT = "Helvetica 42"
+CONNECTION_STATUS_FONT = "Helvetica 36"
 
 CONTROL_BUTTON_WIDTH = 10
 CONTROL_BUTTON_PADDING = 2
@@ -64,7 +64,6 @@ Label(main_box, text="Title:", font=LABEL_FONT).grid(row=0, column=0, sticky=E)
 Label(main_box, text="Progress:", font=LABEL_FONT).grid(row=1, column=0, sticky=E)
 Label(main_box, text="Status:", font=LABEL_FONT).grid(row=2, column=0, sticky=E)
 Label(main_box, text="Connection:", font=LABEL_FONT).grid(row=3, column=0, sticky=E)
-#Label(main_box, text="Ping:", font=LABEL_FONT).grid(row=4, column=0, sticky=E)
 Label(main_box).grid(row=5, pady=15)
 Label(main_box, text="Controls:", font=LABEL_FONT).grid(row=6, column=0, sticky=E, pady=20)
 Label(main_box, text="Volume:", font=LABEL_FONT).grid(row=7, column=0, sticky=E, pady=20)
@@ -72,12 +71,12 @@ Label(main_box, text="Volume:", font=LABEL_FONT).grid(row=7, column=0, sticky=E,
 def server_action(action):
     urlopen("http://{}:{}/{}".format(SERVER, PORT, action))
 
-title_display = Label(main_box, text="No Song Playing", font=INFO_FONT, width=20, anchor="w")
+title_display = Label(main_box, text="No Song Playing", font=INFO_FONT, width=23, anchor="w")
 progress_display = Label(main_box, text="N/A", font=INFO_FONT)
 status_display = Label(main_box, text="Unknown", font=INFO_FONT)
 connection_frame = Frame(main_box)
 connection_status = Label(connection_frame, text="☒", font=CONNECTION_STATUS_FONT, foreground="#aa0000")
-reconnect_button = Button(connection_frame, text="↻ Reconnect", font=MINOR_BUTTON_FONT) # TODO: reconnect button action
+reconnect_button = Button(connection_frame, text="↻ Reconnect", font=MINOR_BUTTON_FONT)
 ping_display = Label(main_box, text="Ping: ?", font=MINOR_INFO_FONT)
 controls_frame = Frame(main_box)
 resume_button = Button(controls_frame, text="Resume", command=lambda: server_action('resume'), font=BUTTON_FONT, width=CONTROL_BUTTON_WIDTH)
