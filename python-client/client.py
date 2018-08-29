@@ -245,6 +245,7 @@ def reconnect(initial_connect=False):
         socket_updater_running = False
         socket.disconnect()
         # completely stop current thread
+        player.stop()
         time.sleep(3)
 
     # restart thread (which will create a new connection)
