@@ -7,6 +7,8 @@ from time import time
 from interval import *
 import player
 
+SERVER, PORT = 'blacker.caltech.edu', 27036
+
 root=Tk()
 root.title("Nearer")
 root.geometry("800x480") #x600") # for testing
@@ -68,17 +70,20 @@ Label(main_box).grid(row=5, pady=15)
 Label(main_box, text="Controls:", font="Helvetica 24 bold").grid(row=6, column=0, sticky=E, pady=20)
 Label(main_box, text="Volume:", font="Helvetica 24 bold").grid(row=7, column=0, sticky=E, pady=20)
 
+def server_action(action):
+    urlopen("http://{}:{}/{}".format(SERVER, PORT, action))
+
 title_display = Label(main_box, text="No Song Playing", font="Helvetica 24", width=20, anchor="w")
 progress_display = Label(main_box, text="N/A of N/A", font="Helvetica 24")
 status_display = Label(main_box, text="Unknown", font="Helvetica 24")
 connection_frame = Frame(main_box)
-connection_status = Label(connection_frame, text="☒", font="Helvetica 48", foreground="#aa0000") # ☑, green
-reconnect_button = Button(connection_frame, text="↻ Reconnect", font="Helvetica 18")
+connection_status = Label(connection_frame, text="☒", font="Helvetica 48", foreground="#aa0000")
+reconnect_button = Button(connection_frame, text="↻ Reconnect", font="Helvetica 18") # TODO: reconnect button action
 ping_display = Label(main_box, text="Ping: ?", font="Helvetica 18")
 controls_frame = Frame(main_box)
-play_button = Button(controls_frame, text="Play", font="Helvetica 28", width=11)
-skip_button = Button(controls_frame, text="Skip", font="Helvetica 28", width=11)
-pause_button = Button(controls_frame, text="Pause", font="Helvetica 28", width=11)
+resume_button = Button(controls_frame, text="Resume", command=lambda: server_action('resume'), font="Helvetica 28", width=11)
+skip_button = Button(controls_frame, text="Skip", command=lambda: server_action('skip'), font="Helvetica 28", width=11)
+pause_button = Button(controls_frame, text="Pause", command=lambda: server_action('pause'), font="Helvetica 28", width=11)
 volume_slider = Scale(main_box, from_=0, to=100, orient=HORIZONTAL)
 
 title_display.grid(row=0, column=1, sticky=W)
@@ -92,7 +97,7 @@ reconnect_button.grid(row=0, column=1, padx=10)
 ping_display.grid(row=4, column=1, sticky=W)
 
 controls_frame.grid(row=6, column=1, columnspan=2, sticky=W)
-play_button.grid(row=0, column=0, padx=2)
+resume_button.grid(row=0, column=0, padx=2)
 skip_button.grid(row=0, column=1, padx=2)
 pause_button.grid(row=0, column=2, padx=2)
 
@@ -106,9 +111,6 @@ for widget in all_children(root):
         widget.configure(background="#eeeeee")
 # TODO set uniform background more cleanly
 
-
-def on_status(status):
-    status_display.config(text=status.get("status", "Unknown"))
 
 pingTimes = []
 pingSent = 0
@@ -126,36 +128,38 @@ def pong(*args):
     ping_display.config(text="Ping: {}".format( round(avg,1) ))
 set_interval(ping, 10)
 
+def on_status(status):
+    status_display.config(text=status.get("status", "Unknown"))
+
 def on_play(req):
     print("Play requested for {} at {}".format( req["video"], req["start"] ))
     player.play(req["video"], req["start"])
-
-def play_button(*args):
-    pass # TODO: call on_play with current song, time
-pause_button.config(command=play_button)
 
 def on_pause(*args):
     print("Paused at {}".format(player.get_time()))
     socket.emit('paused', player.get_time())
     player.stop()
-pause_button.config(command=on_pause)
 
 def on_skip(*args):
     print("Received skip request")
     player.stop()
     socket.emit("done")
-pause_button.config(command=on_skip)
 
-# TODO: reconnect button
 
-def update_loop():
-    last_id = None
-    global thumbnail_img
+threads_running = True
 
-    while True:
+# separate thread to notice if a player is done immediately
+def player_update_loop():
+    while threads_running:
         if player.stop_if_done():
             socket.emit("done")
 
+def gui_update_loop():
+    last_id = None
+    global thumbnail_img
+
+    while threads_running:
+        socket.wait(seconds=1) # should allow time to update frequently enough
         current_vid_data = player.current_vid_data
 
         if current_vid_data:
@@ -175,9 +179,11 @@ def update_loop():
             thumbnail.config(image=thumbnail_img)
 
             progress_display.config(text="N/A of N/A")
-        socket.wait(seconds=1)
-update_thread = threading.Thread(target=update_loop)
-update_thread.start()
+
+thread1 = threading.Thread(target=gui_update_loop)
+thread2 = threading.Thread(target=player_update_loop)
+thread1.start()
+thread2.start()
 
 # The socket.on('connect') and .on('reconnect') handlers didn't work
 # so this wraps all server-signal-handling methods in code to make sure
@@ -196,14 +202,12 @@ def on_disconnect():
     connected = False
     connection_status.config(text="☒", foreground="#aa0000")
 
-socket = SocketIO('blacker.caltech.edu', 27036)
+socket = SocketIO(SERVER, PORT)
 socket.on('disconnect', on_disconnect)
 socket.on('status', connect_augment(on_status))
 socket.on('sv_pong', connect_augment(pong))
 socket.on('play', connect_augment(on_play))
 socket.on('pause', connect_augment(on_pause))
 socket.on('skip', connect_augment(on_skip))
-
-#socket.wait()
 
 root.mainloop()
