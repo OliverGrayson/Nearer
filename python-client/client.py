@@ -220,6 +220,7 @@ def reconnect(initial_connection=False):
     if not initial_connection:
         socket.disconnect()
         player.stop()
+        time.sleep(3)
 
     socket = SocketIO(SERVER, PORT, wait_for_connection=(not initial_connection))
     socket.on('play', on_play)
