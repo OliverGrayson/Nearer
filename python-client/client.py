@@ -212,6 +212,8 @@ def main_update_loop():
             progress_display.config(text="{} of {}".format(current_progress, duration))
 
 def reconnect(initial_connection=False):
+    global socket
+
     if not initial_connection:
         socket.disconnect()
         player.stop()
