@@ -221,8 +221,6 @@ def socket_update_loop():
     socket = SocketIO(SERVER, PORT)
     socket.on('disconnect', on_disconnect)
     socket.on('status', on_status)
-    set_interval(ping, 10, wait=False) # ensures that we know we're connected ASAP
-    # TODO: end these threads on window close
     socket.on('sv_pong', pong)
     socket.on('play', on_play)
     socket.on('pause', on_pause)
@@ -230,29 +228,36 @@ def socket_update_loop():
 
     # code here gets run only on first connection
     server_action('pause') # fetches a status from the server
+
+    iters = 10
     while socket_updater_running:
         socket.wait(seconds=1)
+        if iters >= 10: # sketchier than set_interval but easy to kill it
+            ping()
+            iters = 0
+        iters += 1
 
-def reconnect():
+def reconnect(initial_connect=False):
     global socket
     global socket_updater_thread
     global socket_updater_running
 
-    socket_updater_running = False
-    socket.disconnect()
-    # completely stop current thread
-    time.sleep(3)
+    if not initial_connect: # kill old process first
+        socket_updater_running = False
+        socket.disconnect()
+        # completely stop current thread
+        time.sleep(3)
 
     # restart thread (which will create a new connection)
     socket_updater_running = True
     socket_updater_thread = threading.Thread(target=socket_update_loop)
     socket_updater_thread.start()
 
+reconnect_button.config(command=reconnect)
 
 main_updater_thread = threading.Thread(target=main_update_loop)
 main_updater_thread.start()
-socket_updater_thread = threading.Thread(target=socket_update_loop)
-socket_updater_thread.start()
+reconnect(initial_connect=True)
 
 root.mainloop()
 main_updater_running = False
