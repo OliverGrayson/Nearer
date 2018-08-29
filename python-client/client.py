@@ -167,7 +167,7 @@ def pong(*args):
 def on_status(status):
     status = status.get("status", "Unknown")
     if status == "Playing" and player.current_vid_data == None: # not actually "playing" yet
-        status = "Loading song..."
+        status = "Loading next item..."
 
     status_display.config(text=status)
 
