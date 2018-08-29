@@ -210,6 +210,9 @@ def main_update_loop():
             current_progress = player.get_timestamp(int(player.get_time()))
             duration = current_vid_data[2]
             progress_display.config(text="{} of {}".format(current_progress, duration))
+def socket_update_loop():
+    while True:
+        socket.wait(seconds=1)
 
 def reconnect(initial_connection=False):
     global socket
@@ -233,7 +236,7 @@ reconnect_button.config(command=reconnect)
 reconnect(initial_connection=True)
 
 set_interval(ping, 10)
-socket_updater_thread = threading.Thread(target=socket.wait)
+socket_updater_thread = threading.Thread(target=socket_update_loop)
 main_updater_thread = threading.Thread(target=main_update_loop)
 socket_updater_thread.setDaemon(True)
 main_updater_thread.setDaemon(True) # threads should stop when window exits
