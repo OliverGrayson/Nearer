@@ -187,7 +187,6 @@ def on_skip(*args):
     player.stop()
     socket.emit("done")
 
-@wait_for_connect
 def main_update_loop():
     last_id = None
     global thumbnail_img
@@ -222,14 +221,13 @@ def reconnect(initial_connection=False):
         player.stop()
         time.sleep(3)
 
-    socket = SocketIO(SERVER, PORT, wait_for_connection=(not initial_connection))
+    socket = SocketIO(SERVER, PORT)
     socket.on('play', on_play)
     socket.on('pause', on_pause)
     socket.on('skip', on_skip)
     socket.on('status', on_status)
     socket.on('sv_pong', pong)
     socket.on('disconnect', on_disconnect)
-    socket.on('connect', indicates_connection(lambda: None) ) # TODO: this handler is never called
 
     server_action('resume') # fetches a status from the server
 
