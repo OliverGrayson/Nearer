@@ -211,3 +211,6 @@ socket.on('pause', connect_augment(on_pause))
 socket.on('skip', connect_augment(on_skip))
 
 root.mainloop()
+
+threads_running = False
+player.stop()
