@@ -15,7 +15,7 @@ vid_data_cache = {}
 def get_vid_data(id):
     if id not in vid_data_cache:
         video = pafy.new("https://youtube.com/watch?v=" + id)
-        vid_data_cache[id] = (video.getbestaudio().url, video.title, video.duration, video.bigthumb)
+        vid_data_cache[id] = (video.getbestaudio().url, video.title, video.duration, video.bigthumb, id)
     return vid_data_cache[id]
 
 def prep_queue():

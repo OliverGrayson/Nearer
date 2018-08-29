@@ -25,38 +25,31 @@ def load_tk_image(path, max_width=None, max_height=None):
         img = Image.open(BytesIO(image_byt))
     else:
         img = Image.open(path)
-    old_width = img.width
-    old_height = img.height
-    wh_ratio = old_width / old_height
 
-    assert (max_height or max_width)
-    if max_width and max_height:
-        desired_wh_ratio = max_width / max_height
-        if desired_wh_ratio >= wh_ratio:
-            max_height = None # picture is WIDE (so use max_width)
+    if (max_height or max_width): # resizing requested
+        old_width = img.width
+        old_height = img.height
+        wh_ratio = old_width / old_height
+
+        if max_width and max_height:
+            desired_wh_ratio = max_width / max_height
+            if desired_wh_ratio >= wh_ratio:
+                max_height = None # picture is WIDE (so use max_width)
+            else:
+                max_width = None # picture is TALL (so use max_height)
+        if max_width:
+            width = max_width
+            height = width / wh_ratio
         else:
-            max_width = None # picture is TALL (so use max_height)
-    if max_width:
-        width = max_width
-        height = width / wh_ratio
-    else:
-        height = max_height
-        width = height * wh_ratio
+            height = max_height
+            width = height * wh_ratio
+        height = int(old_height * max_width / old_width)
+        img = img.resize((width, height))
 
-    height = int(old_height * max_width / old_width)
-    img = img.resize((width, height))
     img = ImageTk.PhotoImage(img)
     return img
-def all_children(wid) :
-    _list = wid.winfo_children()
 
-    for item in _list :
-        if item.winfo_children() :
-            _list.extend(item.winfo_children())
-
-    return _list
-
-thumbnail_img = load_tk_image("http://via.placeholder.com/200x150?text=?", max_width=300)
+thumbnail_img = load_tk_image("http://via.placeholder.com/300x225?text=?")
 
 thumbnail = Label(main_box, image = thumbnail_img, anchor="e")
 thumbnail.grid(row=0, rowspan=5, column=2, sticky=E)
@@ -103,6 +96,15 @@ pause_button.grid(row=0, column=2, padx=2)
 
 volume_slider.grid(row=7, column=1, columnspan=2, sticky=E+W)
 
+# https://stackoverflow.com/questions/7290071/getting-every-child-widget-of-a-tkinter-window
+def all_children(wid) :
+    _list = wid.winfo_children()
+
+    for item in _list :
+        if item.winfo_children() :
+            _list.extend(item.winfo_children())
+
+    return _list
 root.configure(background="#eeeeee")
 for widget in all_children(root):
     if isinstance(widget, Button):
@@ -193,6 +195,7 @@ def gui_update_loop():
 
         if current_vid_data:
             if current_vid_data[0] != last_id:
+                last_id = current_vid_data[4]
                 title_display.config(text=current_vid_data[1])
 
                 thumbnail_img = load_tk_image(current_vid_data[3], max_width=300)
@@ -201,10 +204,11 @@ def gui_update_loop():
             current_progress = player.get_timestamp(player.get_time())
             duration = current_vid_data[2]
             progress_display.config(text="{} of {}".format(current_progress, duration))
-        else:
+        elif last_id is not None:
+            last_id = None
             title_display.config(text="No Song Playing")
 
-            thumbnail_img = load_tk_image("http://via.placeholder.com/200x150?text=?", max_width=300)
+            thumbnail_img = load_tk_image("http://via.placeholder.com/300x225?text=?")
             thumbnail.config(image=thumbnail_img)
 
             progress_display.config(text="N/A of N/A")
