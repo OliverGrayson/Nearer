@@ -49,11 +49,6 @@ def load_tk_image(path, max_width=None, max_height=None):
     img = ImageTk.PhotoImage(img)
     return img
 
-thumbnail_img = load_tk_image("http://via.placeholder.com/300x225?text=?")
-
-thumbnail = Label(main_box, image = thumbnail_img, anchor="e")
-thumbnail.grid(row=0, rowspan=5, column=2, sticky=E)
-
 LABEL_FONT = "Helvetica 18 bold"
 INFO_FONT = "Helvetica 18"
 MINOR_INFO_FONT = "Helvetica 12"
@@ -64,30 +59,37 @@ CONNECTION_STATUS_FONT = "Helvetica 42"
 CONTROL_BUTTON_WIDTH = 10
 CONTROL_BUTTON_PADDING = 2
 
-Label(main_box, text="Title:", font=LABEL_FONT).grid(row=0, column=0, sticky=E)
-Label(main_box, text="Progress:", font=LABEL_FONT).grid(row=1, column=0, sticky=E)
-Label(main_box, text="Status:", font=LABEL_FONT).grid(row=2, column=0, sticky=E)
-Label(main_box, text="Connection:", font=LABEL_FONT).grid(row=3, column=0, sticky=E)
-#Label(main_box, text="Ping:", font=LABEL_FONT).grid(row=4, column=0, sticky=E)
+LABEL_WIDTH = 10 #100 px?
+INFO_WIDTH = 20 #350 px?
+THUMB_WIDTH_PX = 300
+THUMB_PADDING_PX = 15
+
+Label(main_box, text="Title:", font=LABEL_FONT, width=LABEL_WIDTH).grid(row=0, column=0, sticky=E)
+Label(main_box, text="Progress:", font=LABEL_FONT, width=LABEL_WIDTH).grid(row=1, column=0, sticky=E)
+Label(main_box, text="Status:", font=LABEL_FONT, width=LABEL_WIDTH).grid(row=2, column=0, sticky=E)
+Label(main_box, text="Connection:", font=LABEL_FONT, width=LABEL_WIDTH).grid(row=3, column=0, sticky=E)
 Label(main_box).grid(row=5, pady=15)
-Label(main_box, text="Controls:", font=LABEL_FONT).grid(row=6, column=0, sticky=E, pady=20)
-Label(main_box, text="Volume:", font=LABEL_FONT).grid(row=7, column=0, sticky=E, pady=20)
+Label(main_box, text="Controls:", font=LABEL_FONT, width=LABEL_WIDTH).grid(row=6, column=0, sticky=E, pady=20)
+Label(main_box, text="Volume:", font=LABEL_FONT, width=LABEL_WIDTH).grid(row=7, column=0, sticky=E, pady=20)
 
 def server_action(action):
     urlopen("http://{}:{}/{}".format(SERVER, PORT, action))
 
-title_display = Label(main_box, text="No Song Playing", font=INFO_FONT, width=20, anchor="w")
-progress_display = Label(main_box, text="N/A", font=INFO_FONT)
-status_display = Label(main_box, text="Unknown", font=INFO_FONT)
-connection_frame = Frame(main_box)
+title_display = Label(main_box, text="No Song Playing", font=INFO_FONT, width=INFO_WIDTH, anchor="w")
+progress_display = Label(main_box, text="N/A", font=INFO_FONT, width=INFO_WIDTH)
+status_display = Label(main_box, text="Unknown", font=INFO_FONT, width=INFO_WIDTH)
+connection_frame = Frame(main_box, width=INFO_WIDTH)
 connection_status = Label(connection_frame, text="☒", font=CONNECTION_STATUS_FONT, foreground="#aa0000")
 reconnect_button = Button(connection_frame, text="↻ Reconnect", font=MINOR_BUTTON_FONT) # TODO: reconnect button action
-ping_display = Label(main_box, text="Ping: ?", font=MINOR_INFO_FONT)
+ping_display = Label(main_box, text="Ping: ?", font=MINOR_INFO_FONT, width=INFO_WIDTH)
 controls_frame = Frame(main_box)
 resume_button = Button(controls_frame, text="Resume", command=lambda: server_action('resume'), font=BUTTON_FONT, width=CONTROL_BUTTON_WIDTH)
 skip_button = Button(controls_frame, text="Skip", command=lambda: server_action('skip'), font=BUTTON_FONT, width=CONTROL_BUTTON_WIDTH)
 pause_button = Button(controls_frame, text="Pause", command=lambda: server_action('pause'), font=BUTTON_FONT, width=CONTROL_BUTTON_WIDTH)
 volume_slider = Scale(main_box, from_=0, to=100, orient=HORIZONTAL)
+thumbnail_img = load_tk_image("http://via.placeholder.com/{}x{}?text=?".format(THUMB_WIDTH_PX, THUMB_WIDTH_PX*0.75))
+thumbnail = Label(main_box, image = thumbnail_img, anchor="e", padx=THUMB_PADDING_PX)
+
 
 title_display.grid(row=0, column=1, sticky=W)
 progress_display.grid(row=1, column=1, sticky=W)
@@ -105,6 +107,7 @@ skip_button.grid(row=0, column=1, padx=CONTROL_BUTTON_PADDING)
 pause_button.grid(row=0, column=2, padx=CONTROL_BUTTON_PADDING)
 
 volume_slider.grid(row=7, column=1, columnspan=2, sticky=E+W)
+thumbnail.grid(row=0, rowspan=5, column=2, sticky=E)
 
 # https://stackoverflow.com/questions/7290071/getting-every-child-widget-of-a-tkinter-window
 def all_children(wid) :
@@ -205,7 +208,7 @@ def gui_update_loop():
                 last_id = current_vid_data[4]
                 title_display.config(text=current_vid_data[1])
 
-                thumbnail_img = load_tk_image(current_vid_data[3], max_width=300)
+                thumbnail_img = load_tk_image(current_vid_data[3], max_width=THUMB_WIDTH_PX)
                 thumbnail.config(image=thumbnail_img)
 
             status_display.config(text="Playing")
