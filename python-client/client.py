@@ -54,29 +54,36 @@ thumbnail_img = load_tk_image("http://via.placeholder.com/300x225?text=?")
 thumbnail = Label(main_box, image = thumbnail_img, anchor="e")
 thumbnail.grid(row=0, rowspan=5, column=2, sticky=E)
 
-Label(main_box, text="Title:", font="Helvetica 24 bold").grid(row=0, column=0, sticky=E)
-Label(main_box, text="Progress:", font="Helvetica 24 bold").grid(row=1, column=0, sticky=E)
-Label(main_box, text="Status:", font="Helvetica 24 bold").grid(row=2, column=0, sticky=E)
-Label(main_box, text="Connection:", font="Helvetica 24 bold").grid(row=3, column=0, sticky=E)
-#Label(main_box, text="Ping:", font="Helvetica 24 bold").grid(row=4, column=0, sticky=E)
+LABEL_FONT = "Helvetica 24 bold"
+INFO_FONT = "Helvetica 24"
+MINOR_INFO_FONT = "Helvetica 18"
+BUTTON_FONT = "Helvetica 28"
+MINOR_BUTTON_FONT = "Helvetica 18"
+CONNECTION_STATUS_FONT = "Helvetica 48"
+
+Label(main_box, text="Title:", font=LABEL_FONT).grid(row=0, column=0, sticky=E)
+Label(main_box, text="Progress:", font=LABEL_FONT).grid(row=1, column=0, sticky=E)
+Label(main_box, text="Status:", font=LABEL_FONT).grid(row=2, column=0, sticky=E)
+Label(main_box, text="Connection:", font=LABEL_FONT).grid(row=3, column=0, sticky=E)
+#Label(main_box, text="Ping:", font=LABEL_FONT).grid(row=4, column=0, sticky=E)
 Label(main_box).grid(row=5, pady=15)
-Label(main_box, text="Controls:", font="Helvetica 24 bold").grid(row=6, column=0, sticky=E, pady=20)
-Label(main_box, text="Volume:", font="Helvetica 24 bold").grid(row=7, column=0, sticky=E, pady=20)
+Label(main_box, text="Controls:", font=LABEL_FONT).grid(row=6, column=0, sticky=E, pady=20)
+Label(main_box, text="Volume:", font=LABEL_FONT).grid(row=7, column=0, sticky=E, pady=20)
 
 def server_action(action):
     urlopen("http://{}:{}/{}".format(SERVER, PORT, action))
 
-title_display = Label(main_box, text="No Song Playing", font="Helvetica 24", width=20, anchor="w")
-progress_display = Label(main_box, text="N/A of N/A", font="Helvetica 24")
-status_display = Label(main_box, text="Unknown", font="Helvetica 24")
+title_display = Label(main_box, text="No Song Playing", font=INFO_FONT, width=20, anchor="w")
+progress_display = Label(main_box, text="N/A of N/A", font=INFO_FONT)
+status_display = Label(main_box, text="Unknown", font=INFO_FONT)
 connection_frame = Frame(main_box)
-connection_status = Label(connection_frame, text="☒", font="Helvetica 48", foreground="#aa0000")
-reconnect_button = Button(connection_frame, text="↻ Reconnect", font="Helvetica 18") # TODO: reconnect button action
-ping_display = Label(main_box, text="Ping: ?", font="Helvetica 18")
+connection_status = Label(connection_frame, text="☒", font=CONNECTION_STATUS_FONT, foreground="#aa0000")
+reconnect_button = Button(connection_frame, text="↻ Reconnect", font=MINOR_BUTTON_FONT) # TODO: reconnect button action
+ping_display = Label(main_box, text="Ping: ?", font=MINOR_INFO_FONT)
 controls_frame = Frame(main_box)
-resume_button = Button(controls_frame, text="Resume", command=lambda: server_action('resume'), font="Helvetica 28", width=11)
-skip_button = Button(controls_frame, text="Skip", command=lambda: server_action('skip'), font="Helvetica 28", width=11)
-pause_button = Button(controls_frame, text="Pause", command=lambda: server_action('pause'), font="Helvetica 28", width=11)
+resume_button = Button(controls_frame, text="Resume", command=lambda: server_action('resume'), font=BUTTON_FONT, width=11)
+skip_button = Button(controls_frame, text="Skip", command=lambda: server_action('skip'), font=BUTTON_FONT, width=11)
+pause_button = Button(controls_frame, text="Pause", command=lambda: server_action('pause'), font=BUTTON_FONT, width=11)
 volume_slider = Scale(main_box, from_=0, to=100, orient=HORIZONTAL)
 
 title_display.grid(row=0, column=1, sticky=W)
