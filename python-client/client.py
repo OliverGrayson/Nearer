@@ -165,7 +165,11 @@ def pong(*args):
 
 @indicates_connection
 def on_status(status):
-    status_display.config(text=status.get("status", "Unknown"))
+    status = status.get("status", "Unknown")
+    if status == "Playing" and player.current_vid_data == None: # not actually "playing" yet
+        status = "Loading song..."
+
+    status_display.config(text=status)
 
 @indicates_connection
 def on_play(req):
@@ -204,15 +208,16 @@ def gui_update_loop():
                 thumbnail_img = load_tk_image(current_vid_data[3], max_width=300)
                 thumbnail.config(image=thumbnail_img)
 
+            status_display.config(text="Playing")
             current_progress = player.get_timestamp(int(player.get_time()))
             duration = current_vid_data[2]
             progress_display.config(text="{} of {}".format(current_progress, duration))
-        elif last_id is not None:
-            last_id = None
+        #elif last_id is not None:
+            #last_id = None
             #title_display.config(text="No Song Playing")
             #thumbnail_img = load_tk_image("http://via.placeholder.com/300x225?text=?")
             #thumbnail.config(image=thumbnail_img)
-            progress_display.config(text="N/A")
+            #progress_display.config(text="N/A")
 
 #@wait_for_connect
 def player_update_loop():
