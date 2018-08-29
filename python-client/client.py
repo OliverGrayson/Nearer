@@ -123,7 +123,7 @@ def indicates_connection(f):
             connection_status.config(text="☑", foreground="#00aa00")
             connected = True
         return f(*args, **kwargs)
-    return callback
+    return _decorator
 def on_disconnect():
     global connected
     connected = False
