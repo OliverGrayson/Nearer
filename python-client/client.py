@@ -225,7 +225,7 @@ def reconnect(initial_connection=False):
     socket.on('disconnect', on_disconnect)
     socket.on('connect', indicates_connection(lambda: None) ) # TODO: this handler is never called
 
-    server_action(STARTUP_ACTION) # fetches a status from the server
+    server_action('resume') # fetches a status from the server
 
 reconnect_button.config(command=reconnect)
 reconnect(initial_connection=True)
