@@ -49,11 +49,6 @@ def load_tk_image(path, max_width=None, max_height=None):
     img = ImageTk.PhotoImage(img)
     return img
 
-thumbnail_img = load_tk_image("http://via.placeholder.com/300x225?text=?")
-
-thumbnail = Label(main_box, image = thumbnail_img, anchor="e")
-thumbnail.grid(row=0, rowspan=5, column=2, sticky=E)
-
 LABEL_FONT = "Helvetica 18 bold"
 INFO_FONT = "Helvetica 18"
 MINOR_INFO_FONT = "Helvetica 12"
@@ -63,6 +58,7 @@ CONNECTION_STATUS_FONT = "Helvetica 42"
 
 CONTROL_BUTTON_WIDTH = 10
 CONTROL_BUTTON_PADDING = 2
+THUMB_WIDTH_PX = 300
 
 Label(main_box, text="Title:", font=LABEL_FONT).grid(row=0, column=0, sticky=E)
 Label(main_box, text="Progress:", font=LABEL_FONT).grid(row=1, column=0, sticky=E)
@@ -88,6 +84,8 @@ resume_button = Button(controls_frame, text="Resume", command=lambda: server_act
 skip_button = Button(controls_frame, text="Skip", command=lambda: server_action('skip'), font=BUTTON_FONT, width=CONTROL_BUTTON_WIDTH)
 pause_button = Button(controls_frame, text="Pause", command=lambda: server_action('pause'), font=BUTTON_FONT, width=CONTROL_BUTTON_WIDTH)
 volume_slider = Scale(main_box, from_=0, to=100, orient=HORIZONTAL)
+thumbnail_img = load_tk_image("http://via.placeholder.com/{}x{}?text=?".format(THUMB_WIDTH_PX, int(THUMB_WIDTH_PX*0.75)))
+thumbnail = Label(main_box, image = thumbnail_img, anchor="e")
 
 title_display.grid(row=0, column=1, sticky=W)
 progress_display.grid(row=1, column=1, sticky=W)
@@ -98,6 +96,8 @@ connection_status.grid(row=0, column=0)
 reconnect_button.grid(row=0, column=1, padx=10)
 
 ping_display.grid(row=4, column=1, sticky=W)
+
+thumbnail.grid(row=0, rowspan=5, column=2, sticky=E)
 
 controls_frame.grid(row=6, column=1, columnspan=2, sticky=W)
 resume_button.grid(row=0, column=0, padx=CONTROL_BUTTON_PADDING)
@@ -191,7 +191,7 @@ def on_skip(*args):
 
 threads_running = True
 
-#@wait_for_connect
+@wait_for_connect
 def gui_update_loop():
     last_id = None
     global thumbnail_img
@@ -205,28 +205,24 @@ def gui_update_loop():
                 last_id = current_vid_data[4]
                 title_display.config(text=current_vid_data[1])
 
-                thumbnail_img = load_tk_image(current_vid_data[3], max_width=300)
+                thumbnail_img = load_tk_image(current_vid_data[3], max_width=THUMB_WIDTH_PX)
                 thumbnail.config(image=thumbnail_img)
 
             status_display.config(text="Playing")
             current_progress = player.get_timestamp(int(player.get_time()))
             duration = current_vid_data[2]
             progress_display.config(text="{} of {}".format(current_progress, duration))
-        #elif last_id is not None:
-            #last_id = None
-            #title_display.config(text="No Song Playing")
-            #thumbnail_img = load_tk_image("http://via.placeholder.com/300x225?text=?")
-            #thumbnail.config(image=thumbnail_img)
-            #progress_display.config(text="N/A")
 
-#@wait_for_connect
+@wait_for_connect
 def player_update_loop():
     while threads_running:
         if player.stop_if_done():
             socket.emit("done")
 
-#@wait_for_connect
+@wait_for_connect
 def socket_update_loop():
+    # code here gets run only on first connection
+    server_action('pause') # fetches a status from the server
     while threads_running:
         socket.wait(seconds=1)
 
@@ -234,6 +230,7 @@ socket = SocketIO(SERVER, PORT)
 socket.on('disconnect', on_disconnect)
 socket.on('status', on_status)
 set_interval(ping, 10, wait=False) # ensures that we know we're connected ASAP
+# TODO: end these threads on window close
 socket.on('sv_pong', pong)
 socket.on('play', on_play)
 socket.on('pause', on_pause)
