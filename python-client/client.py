@@ -221,6 +221,7 @@ def socket_loop():
     socket.on('pause', on_pause)
     socket.on('skip', on_skip)
     socket.on('status', on_status)
+    set_interval(ping, 10)
     socket.on('sv_pong', pong)
     socket.on('disconnect', on_disconnect)
     socket.on('connect', indicates_connection(lambda: None) ) # TODO: this handler is never called
