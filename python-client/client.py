@@ -211,34 +211,27 @@ def main_update_loop():
             duration = current_vid_data[2]
             progress_display.config(text="{} of {}".format(current_progress, duration))
 
-STARTUP_ACTION = 'pause'
-# TODO: change to 'resume'? What should default behavior be on startup?
+def reconnect(initial_connection=False):
+    if not initial_connection:
+        socket.disconnect()
+        player.stop()
 
-def socket_loop():
-    global socket
-    socket = SocketIO(SERVER, PORT)
+    socket = SocketIO(SERVER, PORT, wait_for_connection=(not initial_connection))
     socket.on('play', on_play)
     socket.on('pause', on_pause)
     socket.on('skip', on_skip)
     socket.on('status', on_status)
-    set_interval(ping, 10)
     socket.on('sv_pong', pong)
     socket.on('disconnect', on_disconnect)
     socket.on('connect', indicates_connection(lambda: None) ) # TODO: this handler is never called
 
-    server_action(STARTUP_ACTION)
-    socket.wait()
-
-def reconnect():
-    socket.disconnect()
-    player.stop()
-    socket.connect()
-
     server_action(STARTUP_ACTION) # fetches a status from the server
 
 reconnect_button.config(command=reconnect)
+reconnect(initial_connection=True)
 
-socket_updater_thread = threading.Thread(target=socket_loop)
+set_interval(ping, 10)
+socket_updater_thread = threading.Thread(target=socket.wait)
 main_updater_thread = threading.Thread(target=main_update_loop)
 socket_updater_thread.setDaemon(True)
 main_updater_thread.setDaemon(True) # threads should stop when window exits
