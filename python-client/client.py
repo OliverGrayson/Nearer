@@ -77,7 +77,7 @@ def server_action(action):
     urlopen("http://{}:{}/{}".format(SERVER, PORT, action))
 
 title_display = Label(main_box, text="No Song Playing", font=INFO_FONT, width=20, anchor="w")
-progress_display = Label(main_box, text="N/A of N/A", font=INFO_FONT)
+progress_display = Label(main_box, text="N/A", font=INFO_FONT)
 status_display = Label(main_box, text="Unknown", font=INFO_FONT)
 connection_frame = Frame(main_box)
 connection_status = Label(connection_frame, text="☒", font=CONNECTION_STATUS_FONT, foreground="#aa0000")
@@ -209,12 +209,10 @@ def gui_update_loop():
             progress_display.config(text="{} of {}".format(current_progress, duration))
         elif last_id is not None:
             last_id = None
-            title_display.config(text="No Song Playing")
-
-            thumbnail_img = load_tk_image("http://via.placeholder.com/300x225?text=?")
-            thumbnail.config(image=thumbnail_img)
-
-            progress_display.config(text="N/A of N/A")
+            #title_display.config(text="No Song Playing")
+            #thumbnail_img = load_tk_image("http://via.placeholder.com/300x225?text=?")
+            #thumbnail.config(image=thumbnail_img)
+            progress_display.config(text="N/A")
 
 #@wait_for_connect
 def player_update_loop():
