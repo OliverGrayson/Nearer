@@ -152,7 +152,6 @@ def pong(*args):
     avg = sum(pingTimes)/len(pingTimes)
 
     ping_display.config(text="Ping: {}".format( round(avg,1) ))
-set_interval(ping, 10)
 
 @indicates_connection
 def on_status(status):
@@ -178,19 +177,13 @@ def on_skip(*args):
 
 threads_running = True
 
-# separate thread to notice if a player is done immediately
-def player_update_loop():
-    while threads_running:
-        if player.stop_if_done():
-            socket.emit("done")
-
-@wait_for_connect
+#@wait_for_connect
 def gui_update_loop():
     last_id = None
     global thumbnail_img
 
     while threads_running:
-        socket.wait(seconds=1) # should allow time to update frequently enough
+        # TODO: delay?
         current_vid_data = player.current_vid_data
 
         if current_vid_data:
@@ -213,20 +206,33 @@ def gui_update_loop():
 
             progress_display.config(text="N/A of N/A")
 
-thread1 = threading.Thread(target=gui_update_loop)
-thread2 = threading.Thread(target=player_update_loop)
-thread1.start()
-thread2.start()
+#@wait_for_connect
+def player_update_loop():
+    while threads_running:
+        if player.stop_if_done():
+            socket.emit("done")
+
+#@wait_for_connect
+def socket_update_loop():
+    while threads_running:
+        socket.wait(seconds=1)
 
 socket = SocketIO(SERVER, PORT)
 socket.on('disconnect', on_disconnect)
 socket.on('status', on_status)
+set_interval(ping, 10, wait=False) # ensures that we know we're connected ASAP
 socket.on('sv_pong', pong)
 socket.on('play', on_play)
 socket.on('pause', on_pause)
 socket.on('skip', on_skip)
 
-root.mainloop()
+thread1 = threading.Thread(target=gui_update_loop)
+thread2 = threading.Thread(target=player_update_loop)
+thread3 = threading.Thread(target=socket_update_loop)
+thread1.start()
+thread2.start()
+thread3.start()
 
-threads_running = False
+root.mainloop()
+threads_running = False # ensures all threads stop when window is closed
 player.stop()
