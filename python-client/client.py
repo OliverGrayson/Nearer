@@ -54,14 +54,14 @@ thumbnail_img = load_tk_image("http://via.placeholder.com/300x225?text=?")
 thumbnail = Label(main_box, image = thumbnail_img, anchor="e")
 thumbnail.grid(row=0, rowspan=5, column=2, sticky=E)
 
-LABEL_FONT = "Helvetica 24 bold"
-INFO_FONT = "Helvetica 24"
-MINOR_INFO_FONT = "Helvetica 18"
-BUTTON_FONT = "Helvetica 28"
-MINOR_BUTTON_FONT = "Helvetica 18"
-CONNECTION_STATUS_FONT = "Helvetica 48"
+LABEL_FONT = "Helvetica 18 bold"
+INFO_FONT = "Helvetica 18"
+MINOR_INFO_FONT = "Helvetica 12"
+BUTTON_FONT = "Helvetica 22"
+MINOR_BUTTON_FONT = "Helvetica 12"
+CONNECTION_STATUS_FONT = "Helvetica 42"
 
-CONTROL_BUTTON_WIDTH = 11
+CONTROL_BUTTON_WIDTH = 10
 CONTROL_BUTTON_PADDING = 2
 
 Label(main_box, text="Title:", font=LABEL_FONT).grid(row=0, column=0, sticky=E)
