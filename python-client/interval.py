@@ -10,5 +10,3 @@ def set_interval(func, sec, args=(), wait=True):
     t = threading.Timer(sec, func_wrapper)
     t.start()
     return t
-
-set_interval(lambda: print('foobar'), 5, wait=False)
