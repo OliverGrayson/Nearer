@@ -187,14 +187,14 @@ def gui_update_loop():
         current_vid_data = player.current_vid_data
 
         if current_vid_data:
-            if current_vid_data[0] != last_id:
+            if current_vid_data[4] != last_id:
                 last_id = current_vid_data[4]
                 title_display.config(text=current_vid_data[1])
 
                 thumbnail_img = load_tk_image(current_vid_data[3], max_width=300)
                 thumbnail.config(image=thumbnail_img)
 
-            current_progress = player.get_timestamp(player.get_time())
+            current_progress = player.get_timestamp(int(player.get_time()))
             duration = current_vid_data[2]
             progress_display.config(text="{} of {}".format(current_progress, duration))
         elif last_id is not None:
