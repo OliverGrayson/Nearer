@@ -3,7 +3,7 @@ from PIL import ImageTk, Image
 from urllib.request import urlopen
 from io import BytesIO
 from socketIO_client import SocketIO
-from time import time
+import time
 from interval import *
 import player
 
@@ -151,12 +151,12 @@ pingTimes = []
 pingSent = 0
 def ping():
     global pingSent
-    pingSent = time()
+    pingSent = time.time()
     socket.emit('cl_ping')
 @indicates_connection
 def pong(*args):
     global pingTimes
-    latency = time() - pingSent;
+    latency = time.time() - pingSent;
     pingTimes.append(latency);
     pingTimes = pingTimes[-30:]
     avg = sum(pingTimes)/len(pingTimes)
@@ -189,15 +189,18 @@ def on_skip(*args):
     socket.emit("done")
 
 
-threads_running = True
+main_updater_running = True
+socket_updater_running = True
 
 @wait_for_connect
-def gui_update_loop():
+def main_update_loop():
     last_id = None
     global thumbnail_img
 
-    while threads_running:
-        # TODO: delay?
+    while main_updater_running:
+        if player.stop_if_done():
+            socket.emit("done")
+
         current_vid_data = player.current_vid_data
 
         if current_vid_data:
@@ -213,36 +216,46 @@ def gui_update_loop():
             duration = current_vid_data[2]
             progress_display.config(text="{} of {}".format(current_progress, duration))
 
-@wait_for_connect
-def player_update_loop():
-    while threads_running:
-        if player.stop_if_done():
-            socket.emit("done")
-
-@wait_for_connect
 def socket_update_loop():
+    global socket
+    socket = SocketIO(SERVER, PORT)
+    socket.on('disconnect', on_disconnect)
+    socket.on('status', on_status)
+    set_interval(ping, 10, wait=False) # ensures that we know we're connected ASAP
+    # TODO: end these threads on window close
+    socket.on('sv_pong', pong)
+    socket.on('play', on_play)
+    socket.on('pause', on_pause)
+    socket.on('skip', on_skip)
+
     # code here gets run only on first connection
     server_action('pause') # fetches a status from the server
-    while threads_running:
+    while socket_updater_running:
         socket.wait(seconds=1)
 
-socket = SocketIO(SERVER, PORT)
-socket.on('disconnect', on_disconnect)
-socket.on('status', on_status)
-set_interval(ping, 10, wait=False) # ensures that we know we're connected ASAP
-# TODO: end these threads on window close
-socket.on('sv_pong', pong)
-socket.on('play', on_play)
-socket.on('pause', on_pause)
-socket.on('skip', on_skip)
+def reconnect():
+    global socket
+    global socket_updater_thread
+    global socket_updater_running
 
-thread1 = threading.Thread(target=gui_update_loop)
-thread2 = threading.Thread(target=player_update_loop)
-thread3 = threading.Thread(target=socket_update_loop)
-thread1.start()
-thread2.start()
-thread3.start()
+    socket_updater_running = False
+    socket.disconnect()
+    # completely stop current thread
+    time.sleep(3)
+
+    # restart thread (which will create a new connection)
+    socket_updater_running = True
+    socket_updater_thread = threading.Thread(target=socket_update_loop)
+    socket_updater_thread.start()
+
+
+main_updater_thread = threading.Thread(target=main_update_loop)
+main_updater_thread.start()
+socket_updater_thread = threading.Thread(target=socket_update_loop)
+socket_updater_thread.start()
 
 root.mainloop()
-threads_running = False # ensures all threads stop when window is closed
+main_updater_running = False
+socket_updater_running = False
+# ensures all threads stop when window is closed
 player.stop()
