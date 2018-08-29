@@ -61,6 +61,9 @@ BUTTON_FONT = "Helvetica 28"
 MINOR_BUTTON_FONT = "Helvetica 18"
 CONNECTION_STATUS_FONT = "Helvetica 48"
 
+CONTROL_BUTTON_WIDTH = 11
+CONTROL_BUTTON_PADDING = 2
+
 Label(main_box, text="Title:", font=LABEL_FONT).grid(row=0, column=0, sticky=E)
 Label(main_box, text="Progress:", font=LABEL_FONT).grid(row=1, column=0, sticky=E)
 Label(main_box, text="Status:", font=LABEL_FONT).grid(row=2, column=0, sticky=E)
@@ -81,9 +84,9 @@ connection_status = Label(connection_frame, text="☒", font=CONNECTION_STATUS_F
 reconnect_button = Button(connection_frame, text="↻ Reconnect", font=MINOR_BUTTON_FONT) # TODO: reconnect button action
 ping_display = Label(main_box, text="Ping: ?", font=MINOR_INFO_FONT)
 controls_frame = Frame(main_box)
-resume_button = Button(controls_frame, text="Resume", command=lambda: server_action('resume'), font=BUTTON_FONT, width=11)
-skip_button = Button(controls_frame, text="Skip", command=lambda: server_action('skip'), font=BUTTON_FONT, width=11)
-pause_button = Button(controls_frame, text="Pause", command=lambda: server_action('pause'), font=BUTTON_FONT, width=11)
+resume_button = Button(controls_frame, text="Resume", command=lambda: server_action('resume'), font=BUTTON_FONT, width=CONTROL_BUTTON_WIDTH)
+skip_button = Button(controls_frame, text="Skip", command=lambda: server_action('skip'), font=BUTTON_FONT, width=CONTROL_BUTTON_WIDTH)
+pause_button = Button(controls_frame, text="Pause", command=lambda: server_action('pause'), font=BUTTON_FONT, width=CONTROL_BUTTON_WIDTH)
 volume_slider = Scale(main_box, from_=0, to=100, orient=HORIZONTAL)
 
 title_display.grid(row=0, column=1, sticky=W)
@@ -97,9 +100,9 @@ reconnect_button.grid(row=0, column=1, padx=10)
 ping_display.grid(row=4, column=1, sticky=W)
 
 controls_frame.grid(row=6, column=1, columnspan=2, sticky=W)
-resume_button.grid(row=0, column=0, padx=2)
-skip_button.grid(row=0, column=1, padx=2)
-pause_button.grid(row=0, column=2, padx=2)
+resume_button.grid(row=0, column=0, padx=CONTROL_BUTTON_PADDING)
+skip_button.grid(row=0, column=1, padx=CONTROL_BUTTON_PADDING)
+pause_button.grid(row=0, column=2, padx=CONTROL_BUTTON_PADDING)
 
 volume_slider.grid(row=7, column=1, columnspan=2, sticky=E+W)
 
