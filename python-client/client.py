@@ -187,16 +187,12 @@ def on_skip(*args):
     player.stop()
     socket.emit("done")
 
-
-main_updater_running = True
-socket_updater_running = True
-
 @wait_for_connect
 def main_update_loop():
     last_id = None
     global thumbnail_img
 
-    while main_updater_running:
+    while True:
         if player.stop_if_done():
             socket.emit("done")
 
@@ -215,52 +211,40 @@ def main_update_loop():
             duration = current_vid_data[2]
             progress_display.config(text="{} of {}".format(current_progress, duration))
 
-def socket_update_loop():
+STARTUP_ACTION = 'pause'
+# TODO: change to 'resume'? What should default behavior be on startup?
+
+def socket_loop():
     global socket
     socket = SocketIO(SERVER, PORT)
-    socket.on('disconnect', on_disconnect)
-    socket.on('status', on_status)
-    socket.on('sv_pong', pong)
     socket.on('play', on_play)
     socket.on('pause', on_pause)
     socket.on('skip', on_skip)
+    socket.on('status', on_status)
+    socket.on('sv_pong', pong)
+    socket.on('disconnect', on_disconnect)
+    socket.on('connect', indicates_connection(lambda: None) ) # TODO: this handler is never called
 
-    # code here gets run only on first connection
-    server_action('pause') # fetches a status from the server
+    server_action(STARTUP_ACTION)
+    socket.wait()
 
-    iters = 10
-    while socket_updater_running:
-        socket.wait(seconds=1)
-        if iters >= 10: # sketchier than set_interval but easy to kill it
-            ping()
-            iters = 0
-        iters += 1
+def reconnect():
+    socket.disconnect()
+    player.stop()
+    socket.connect()
 
-def reconnect(initial_connect=False):
-    global socket
-    global socket_updater_thread
-    global socket_updater_running
-
-    if not initial_connect: # kill old process first
-        socket_updater_running = False
-        socket.disconnect()
-        # completely stop current thread
-        player.stop()
-        time.sleep(3)
-
-    # restart thread (which will create a new connection)
-    socket_updater_running = True
-    socket_updater_thread = threading.Thread(target=socket_update_loop)
-    socket_updater_thread.start()
+    server_action(STARTUP_ACTION) # fetches a status from the server
 
 reconnect_button.config(command=reconnect)
 
+socket_updater_thread = threading.Thread(target=socket_loop)
 main_updater_thread = threading.Thread(target=main_update_loop)
+socket_updater_thread.setDaemon(True)
+main_updater_thread.setDaemon(True) # threads should stop when window exits
+socket_updater_thread.start()
 main_updater_thread.start()
-reconnect(initial_connect=True)
 
 root.mainloop()
-main_updater_running = False
-socket_updater_running = False
-# ensures all threads stop when window is closed
+
+socket.disconnect()
 player.stop()
