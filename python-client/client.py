@@ -112,12 +112,36 @@ for widget in all_children(root):
 # TODO set uniform background more cleanly
 
 
+# The socket.on('connect') and .on('reconnect') handlers didn't work
+# so this wraps all server-signal-handling methods in code to make sure
+# we know that we're connected
+connected = False
+def indicates_connection(f):
+    def _decorator(*args, **kwargs):
+        global connected
+        if not connected:
+            connection_status.config(text="☑", foreground="#00aa00")
+            connected = True
+        return f(*args, **kwargs)
+    return callback
+def on_disconnect():
+    global connected
+    connected = False
+    connection_status.config(text="☒", foreground="#aa0000")
+def wait_for_connect(f):
+    def _decorator(*args, **kwargs):
+        while not connected:
+            continue
+        return f(*args, **kwargs)
+    return _decorator
+
 pingTimes = []
 pingSent = 0
 def ping():
     global pingSent
     pingSent = time()
     socket.emit('cl_ping')
+@indicates_connection
 def pong(*args):
     global pingTimes
     latency = time() - pingSent;
@@ -128,18 +152,22 @@ def pong(*args):
     ping_display.config(text="Ping: {}".format( round(avg,1) ))
 set_interval(ping, 10)
 
+@indicates_connection
 def on_status(status):
     status_display.config(text=status.get("status", "Unknown"))
 
+@indicates_connection
 def on_play(req):
     print("Play requested for {} at {}".format( req["video"], req["start"] ))
     player.play(req["video"], req["start"])
 
+@indicates_connection
 def on_pause(*args):
     print("Paused at {}".format(player.get_time()))
     socket.emit('paused', player.get_time())
     player.stop()
 
+@indicates_connection
 def on_skip(*args):
     print("Received skip request")
     player.stop()
@@ -154,6 +182,7 @@ def player_update_loop():
         if player.stop_if_done():
             socket.emit("done")
 
+@wait_for_connect
 def gui_update_loop():
     last_id = None
     global thumbnail_img
@@ -185,30 +214,13 @@ thread2 = threading.Thread(target=player_update_loop)
 thread1.start()
 thread2.start()
 
-# The socket.on('connect') and .on('reconnect') handlers didn't work
-# so this wraps all server-signal-handling methods in code to make sure
-# we know that we're connected
-connected = False
-def connect_augment(f):
-    def callback(*args, **kwargs):
-        global connected
-        if not connected:
-            connection_status.config(text="☑", foreground="#00aa00")
-            connected = True
-        f(*args, **kwargs)
-    return callback
-def on_disconnect():
-    global connected
-    connected = False
-    connection_status.config(text="☒", foreground="#aa0000")
-
 socket = SocketIO(SERVER, PORT)
 socket.on('disconnect', on_disconnect)
-socket.on('status', connect_augment(on_status))
-socket.on('sv_pong', connect_augment(pong))
-socket.on('play', connect_augment(on_play))
-socket.on('pause', connect_augment(on_pause))
-socket.on('skip', connect_augment(on_skip))
+socket.on('status', on_status)
+socket.on('sv_pong', pong)
+socket.on('play', on_play)
+socket.on('pause', on_pause)
+socket.on('skip', on_skip)
 
 root.mainloop()
 
