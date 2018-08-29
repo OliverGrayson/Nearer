@@ -36,6 +36,7 @@ def get_timestamp(seconds):
     return "{:02}:{:02}:{:02}".format(hours, minutes, seconds)
 
 def play(id, start_time=0):
+    global current_vid_data
     current_vid_data = get_vid_data(id)
     play_url = current_vid_data[0]
 
