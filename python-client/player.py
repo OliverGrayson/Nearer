@@ -20,7 +20,11 @@ def set_volume(vol):
     current_volume = vol
 
     if player:
-        player.set_volume(linear_to_mbels(vol))
+        if vol == 0:
+            player.mute()
+        else:
+            player.unmute()
+            player.set_volume(linear_to_mbels(vol))
 
 
 vid_data_cache = {}
@@ -55,7 +59,7 @@ def play(id, start_time=0):
     args = ["-o", "local"]
     if start_time != 0:
         args += ["--pos", get_timestamp(start_time)]
-    if current_volume != 1:
+    if current_volume != 1 and current_volume != 0:
         args += ["--vol", linear_to_mbels(current_volume)]
 
     global player
@@ -63,6 +67,10 @@ def play(id, start_time=0):
     if player is None:
         player = OMXPlayer(play_url, args=args)
         player_start_time = time.time() - start_time
+
+        if current_volume == 0:
+            player.mute()
+
         print("Started OMXPlayer for {} at {}".format(id, start_time))
 
 def stop():
