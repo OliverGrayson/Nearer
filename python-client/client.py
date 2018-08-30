@@ -221,23 +221,25 @@ def socket_update_loop():
     while True:
         socket.wait(seconds=1)
 
-def reconnect():
-    socket.disconnect()
-    player.stop()
-    on_disconnect()
-    time.sleep(3)
-    socket.connect() # TODO this causes the server to complain for some reason
+def reconnect(initial_connection=False):
+    global socket
 
+    if not initial_connection:
+        on_disconnect()
+        socket.disconnect()
+        player.stop()
+        time.sleep(3)
+
+    socket = SocketIO(SERVER, PORT, wait_for_connection=False)
+    socket.on('play', on_play)
+    socket.on('pause', on_pause)
+    socket.on('skip', on_skip)
+    socket.on('status', on_status)
+    socket.on('sv_pong', pong)
+    socket.on('disconnect', on_disconnect)
 
 reconnect_button.config(command=reconnect)
-
-socket = SocketIO(SERVER, PORT, wait_for_connection=False)
-socket.on('play', on_play)
-socket.on('pause', on_pause)
-socket.on('skip', on_skip)
-socket.on('status', on_status)
-socket.on('sv_pong', pong)
-socket.on('disconnect', on_disconnect)
+reconnect(initial_connection=True)
 
 set_interval(ping, 10)
 socket_updater_thread = threading.Thread(target=socket_update_loop)
