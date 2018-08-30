@@ -225,20 +225,18 @@ def reconnect(initial_connection=False):
     global socket
 
     if not initial_connection:
-        socket.disconnect()
         on_disconnect()
+        socket.disconnect()
         player.stop()
         time.sleep(3)
 
-    socket = SocketIO(SERVER, PORT)
+    socket = SocketIO(SERVER, PORT, wait_for_connection=False)
     socket.on('play', on_play)
     socket.on('pause', on_pause)
     socket.on('skip', on_skip)
     socket.on('status', on_status)
     socket.on('sv_pong', pong)
     socket.on('disconnect', on_disconnect)
-
-    server_action('resume') # fetches a status from the server
 
 reconnect_button.config(command=reconnect)
 reconnect(initial_connection=True)
