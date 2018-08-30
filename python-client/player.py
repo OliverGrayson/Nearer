@@ -60,7 +60,7 @@ def play(id, start_time=0):
     if start_time != 0:
         args += ["--pos", get_timestamp(start_time)]
     if current_volume != 1 and current_volume != 0:
-        args += ["--vol", linear_to_mbels(current_volume)]
+        args += ["--vol", str(linear_to_mbels(current_volume))]
 
     global player
     global player_start_time
