@@ -218,8 +218,7 @@ def main_update_loop():
             player.set_volume(desired_volume)
 
 def socket_update_loop():
-    while True:
-        socket.wait(seconds=1)
+    socket.wait()
 
 def reconnect(initial_connection=False):
     global socket
