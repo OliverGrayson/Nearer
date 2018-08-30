@@ -60,6 +60,8 @@ CONTROL_BUTTON_WIDTH = 10
 CONTROL_BUTTON_PADDING = 2
 THUMB_WIDTH_PX = 300
 
+DEFAULT_VOLUME = 100
+
 Label(main_box, text="Title:", font=LABEL_FONT).grid(row=0, column=0, sticky=E)
 Label(main_box, text="Progress:", font=LABEL_FONT).grid(row=1, column=0, sticky=E)
 Label(main_box, text="Status:", font=LABEL_FONT).grid(row=2, column=0, sticky=E)
@@ -82,7 +84,7 @@ controls_frame = Frame(main_box)
 resume_button = Button(controls_frame, text="Resume", command=lambda: server_action('resume'), font=BUTTON_FONT, width=CONTROL_BUTTON_WIDTH)
 skip_button = Button(controls_frame, text="Skip", command=lambda: server_action('skip'), font=BUTTON_FONT, width=CONTROL_BUTTON_WIDTH)
 pause_button = Button(controls_frame, text="Pause", command=lambda: server_action('pause'), font=BUTTON_FONT, width=CONTROL_BUTTON_WIDTH)
-volume_slider = Scale(main_box, from_=0, to=100, orient=HORIZONTAL)
+volume_slider = Scale(main_box, from_=0, to=100, cursor=DEFAULT_VOLUME orient=HORIZONTAL)
 thumbnail_img = load_tk_image("http://via.placeholder.com/{}x{}?text=?".format(THUMB_WIDTH_PX, int(THUMB_WIDTH_PX*0.75)))
 thumbnail = Label(main_box, image = thumbnail_img, anchor="e")
 
@@ -209,6 +211,11 @@ def main_update_loop():
             current_progress = player.get_timestamp(int(player.get_time()))
             duration = current_vid_data[2]
             progress_display.config(text="{} of {}".format(current_progress, duration))
+
+        desired_volume = volume_slider.get() / 100
+        if desired_volume != player.current_volume:
+            player.set_volume(desired_volume)
+
 def socket_update_loop():
     while True:
         socket.wait(seconds=1)

@@ -3,6 +3,7 @@ from omxplayer.player import OMXPlayer, OMXPlayerDeadError
 from interval import *
 import requests
 import time
+import math
 
 STATUS_URL = "http://blacker.caltech.edu:27036/status"
 
@@ -10,6 +11,17 @@ player = None
 player_start_time = None
 player_stop_time = 0
 current_vid_data = None
+
+current_volume = 0.5
+def linear_to_mbels(val):
+    return 2000 * math.log(val, 10)
+def set_volume(vol):
+    global current_volume
+    current_volume = vol
+
+    if player:
+        player.set_volume(linear_to_mbels(vol))
+
 
 vid_data_cache = {}
 def get_vid_data(id):
@@ -43,6 +55,8 @@ def play(id, start_time=0):
     args = ["-o", "local"]
     if start_time != 0:
         args += ["--pos", get_timestamp(start_time)]
+    if current_volume != 1:
+        args += ["--vol", linear_to_mbels(current_volume)]
 
     global player
     global player_start_time
