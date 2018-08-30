@@ -226,6 +226,7 @@ def reconnect(initial_connection=False):
 
     if not initial_connection:
         socket.disconnect()
+        on_disconnect()
         player.stop()
         time.sleep(3)
 
