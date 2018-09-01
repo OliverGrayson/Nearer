@@ -218,21 +218,12 @@ def main_update_loop():
         desired_volume = volume_slider.get() / 100
         player.set_volume(desired_volume)
 
-def socket_update_loop():
-    while not closed:
-        socket.wait(seconds=1)
+request_reconnect = False
 
-def reconnect(initial_connection=False):
+def connect(wait_for_connection):
     global socket
 
-    if not initial_connection:
-        on_disconnect()
-        socket.disconnect()
-        player.stop()
-        time.sleep(3)
-        # TODO: socket.connect() causes an error in server.py
-
-    socket = SocketIO(SERVER, PORT, wait_for_connection=False)
+    socket = SocketIO(SERVER, PORT, wait_for_connection=wait_for_connection)
     socket.on('play', on_play)
     socket.on('pause', on_pause)
     socket.on('skip', on_skip)
@@ -240,8 +231,33 @@ def reconnect(initial_connection=False):
     socket.on('sv_pong', pong)
     socket.on('disconnect', on_disconnect)
 
+def socket_update_loop():
+    global request_reconnect
+
+    while not closed:
+        socket.wait(seconds=1)
+        
+        if request_reconnect:
+            request_reconnect = False
+
+            on_disconnect()
+            pinger.cancel()
+            player.stop()
+            socket.disconnect()
+
+            time.sleep(3)
+
+            connect(True)
+            pinger.restart()
+
+            # TODO: socket.connect() causes an error in server.py
+
+def reconnect():
+    global request_reconnect
+    request_reconnect = True
+
 reconnect_button.config(command=reconnect)
-reconnect(initial_connection=True)
+connect(False)
 
 pinger = SetInterval(ping, 10)
 socket_updater_thread = threading.Thread(target=socket_update_loop)
