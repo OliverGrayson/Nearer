@@ -193,7 +193,7 @@ def on_skip(*args):
 
 closed = False
 sock_close_event = threading.Event()
-gui_close_event threading.Event()
+gui_close_event = threading.Event()
 reconnect_requested = False
 
 def connect(wait_for_connection):
