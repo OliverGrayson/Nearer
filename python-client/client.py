@@ -264,6 +264,8 @@ def gui_update_loop():
         player.set_volume(desired_volume)
         # TODO only do this when the slider is changed?
 
+        time.sleep(1)
+
 socket_updater_thread = threading.Thread(target=socket_update_loop)
 gui_updater_thread = threading.Thread(target=gui_update_loop)
 socket_updater_thread.start()
