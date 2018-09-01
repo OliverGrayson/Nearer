@@ -191,17 +191,59 @@ def on_skip(*args):
     socket.emit("done")
 
 closed = False
+reconnect_requested = False
 
-def main_update_loop():
+def connect(wait_for_connection):
+    global socket
+
+    socket = SocketIO(SERVER, PORT, wait_for_connection=wait_for_connection)
+    socket.on('play', on_play)
+    socket.on('pause', on_pause)
+    socket.on('skip', on_skip)
+    socket.on('status', on_status)
+    socket.on('sv_pong', pong)
+    socket.on('disconnect', on_disconnect)
+
+def socket_update_loop():
     last_id = None
     global thumbnail_img
+    global reconnect_requested
+
+    connect(True)
+    pinger = SetInterval(ping, 10)
 
     while not closed:
+        # perform all socket-related actions
+        socket.wait(seconds=1)
         if player.stop_if_done():
             socket.emit("done")
 
-        current_vid_data = player.current_vid_data
+        # reconnect if necessary
+        if reconnect_requested:
+            reconnect_requested = False
 
+            on_disconnect()
+            pinger.cancel()
+            player.stop()
+            socket.disconnect()
+
+            time.sleep(3)
+
+            connect(True) # TODO socket.connect() causes an error in server.py
+            pinger.restart()
+
+    pinger.cancel()
+
+def reconnect():
+    global reconnect_requested
+    reconnect_requested = True
+
+reconnect_button.config(command=reconnect)
+
+def gui_update_loop():
+    while not closed:
+        # GUI updates
+        current_vid_data = player.current_vid_data
         if current_vid_data:
             if current_vid_data[4] != last_id:
                 last_id = current_vid_data[4]
@@ -217,58 +259,15 @@ def main_update_loop():
 
         desired_volume = volume_slider.get() / 100
         player.set_volume(desired_volume)
+        # TODO only do this when the slider is changed?
 
-request_reconnect = False
-
-def connect(wait_for_connection):
-    global socket
-
-    socket = SocketIO(SERVER, PORT, wait_for_connection=wait_for_connection)
-    socket.on('play', on_play)
-    socket.on('pause', on_pause)
-    socket.on('skip', on_skip)
-    socket.on('status', on_status)
-    socket.on('sv_pong', pong)
-    socket.on('disconnect', on_disconnect)
-
-def socket_update_loop():
-    global request_reconnect
-
-    while not closed:
-        socket.wait(seconds=1)
-        
-        if request_reconnect:
-            request_reconnect = False
-
-            on_disconnect()
-            pinger.cancel()
-            player.stop()
-            socket.disconnect()
-
-            time.sleep(3)
-
-            connect(True)
-            pinger.restart()
-
-            # TODO: socket.connect() causes an error in server.py
-
-def reconnect():
-    global request_reconnect
-    request_reconnect = True
-
-reconnect_button.config(command=reconnect)
-connect(False)
-
-pinger = SetInterval(ping, 10)
 socket_updater_thread = threading.Thread(target=socket_update_loop)
-main_updater_thread = threading.Thread(target=main_update_loop)
+gui_updater_thread = threading.Thread(target=gui_update_loop)
 socket_updater_thread.start()
-main_updater_thread.start()
+gui_updater_thread.start()
 
-root.mainloop()
+root.mainloop() # runs until window is closed
 
 closed = True
-pinger.cancel()
 player.stop()
-player.queue_loader.cancel()
 socket.disconnect()

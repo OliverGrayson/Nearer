@@ -3,9 +3,10 @@ import time, threading
 # source: https://stackoverflow.com/questions/2697039/python-equivalent-of-setinterval/48709380#48709380
 StartTime=time.time()
 class SetInterval:
-    def __init__(self,action,interval) :
+    def __init__(self,action,interval,daemon=True) :
         self.interval=interval
         self.action=action
+        self.daemon=daemon
         self.stopEvent=threading.Event()
         self.restart()
 
@@ -20,4 +21,5 @@ class SetInterval:
 
     def restart(self):
         thread=threading.Thread(target=self.__setInterval)
+        thread.setDaemon(self.daemon)
         thread.start()
