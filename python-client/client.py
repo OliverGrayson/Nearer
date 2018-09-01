@@ -141,7 +141,8 @@ def indicates_connection(f):
 def on_disconnect():
     global connected
     connected = False
-    connection_status.config(text="☒", foreground="#aa0000")
+    if not closed: # do not try to change data on closed window
+        connection_status.config(text="☒", foreground="#aa0000")
 def wait_for_connect(f):
     def _decorator(*args, **kwargs):
         while not connected:
@@ -241,7 +242,7 @@ reconnect_button.config(command=reconnect)
 def gui_update_loop():
     last_id = None
     global thumbnail_img
-    
+
     while not closed:
         # GUI updates
         current_vid_data = player.current_vid_data
