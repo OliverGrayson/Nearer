@@ -1,13 +1,23 @@
-import threading
+import time, threading
 
-# source: https://stackoverflow.com/questions/2697039/python-equivalent-of-setinterval
-def set_interval(func, sec, args=(), wait=True, daemon=True):
-    if not wait:
-        func(*args)
-    def func_wrapper():
-        set_interval(func, sec)
-        func(*args)
-    t = threading.Timer(sec, func_wrapper)
-    t.setDaemon(daemon)
-    t.start()
-    return t
+# source: https://stackoverflow.com/questions/2697039/python-equivalent-of-setinterval/48709380#48709380
+StartTime=time.time()
+class SetInterval:
+    def __init__(self,action,interval) :
+        self.interval=interval
+        self.action=action
+        self.stopEvent=threading.Event()
+        self.restart()
+
+    def __setInterval(self) :
+        nextTime=time.time()+self.interval
+        while not self.stopEvent.wait(nextTime-time.time()) :
+            nextTime+=self.interval
+            self.action()
+
+    def cancel(self) :
+        self.stopEvent.set()
+
+    def restart(self):
+        thread=threading.Thread(target=self.__setInterval)
+        thread.start()

@@ -45,7 +45,7 @@ def prep_queue():
         to_download.add(data["current"])
     for id in to_download:
         get_vid_data(id) # ensure we have a player url for everybody in the queue
-set_interval(prep_queue, 10)
+queue_loader = SetInterval(prep_queue, 10)
 
 def get_timestamp(seconds):
     hours = seconds // 3600

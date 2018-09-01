@@ -230,6 +230,7 @@ def reconnect(initial_connection=False):
         socket.disconnect()
         player.stop()
         time.sleep(3)
+        # TODO: socket.connect() causes an error in server.py
 
     socket = SocketIO(SERVER, PORT, wait_for_connection=False)
     socket.on('play', on_play)
@@ -242,13 +243,16 @@ def reconnect(initial_connection=False):
 reconnect_button.config(command=reconnect)
 reconnect(initial_connection=True)
 
-set_interval(ping, 10)
+pinger = SetInterval(ping, 10)
 socket_updater_thread = threading.Thread(target=socket_update_loop)
 main_updater_thread = threading.Thread(target=main_update_loop)
 socket_updater_thread.start()
 main_updater_thread.start()
 
 root.mainloop()
+
 closed = True
+pinger.cancel()
 player.stop()
+player.queue_loader.cancel()
 socket.disconnect()
