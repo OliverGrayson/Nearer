@@ -235,7 +235,7 @@ def socket_update_loop():
     pinger.cancel()
 
 def update_volume(vol):
-    player.set_volume(vol / 100)
+    player.set_volume(int(vol) / 100)
 def reconnect():
     global reconnect_requested
     reconnect_requested = True
