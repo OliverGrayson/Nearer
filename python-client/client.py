@@ -192,8 +192,7 @@ def on_skip(*args):
     socket.emit("done")
 
 closed = False
-sock_close_event = threading.Event()
-gui_close_event = threading.Event()
+close_event = threading.Event()
 reconnect_requested = False
 
 def connect(wait_for_connection):
@@ -213,7 +212,7 @@ def socket_update_loop():
     connect(True)
     pinger = SetInterval(ping, 10, wait=False)
 
-    while not sock_close_event.is_set():
+    while not close_event.is_set():
         # perform all socket-related actions
         socket.wait(seconds=1)
         if player.stop_if_done():
@@ -245,7 +244,7 @@ def gui_update_loop():
     last_id = None
     global thumbnail_img
 
-    while not gui_close_event.is_set():
+    while not close_event.is_set():
         # GUI updates
         current_vid_data = player.current_vid_data
         if current_vid_data:
@@ -273,7 +272,6 @@ gui_updater_thread.start()
 root.mainloop() # runs until window is closed
 
 closed = True
-sock_close_event.set()
-gui_close_event.set()
+close_event.set()
 player.stop()
 socket.disconnect()
