@@ -234,10 +234,13 @@ def socket_update_loop():
 
     pinger.cancel()
 
+def update_volume():
+    player.set_volume(volume_slider.get() / 100)
 def reconnect():
     global reconnect_requested
     reconnect_requested = True
 
+volume_slider.config(command=update_volume)
 reconnect_button.config(command=reconnect)
 
 def gui_update_loop():
@@ -259,10 +262,6 @@ def gui_update_loop():
             current_progress = player.get_timestamp(int(player.get_time()))
             duration = current_vid_data[2]
             progress_display.config(text="{} of {}".format(current_progress, duration))
-
-        desired_volume = volume_slider.get() / 100
-        player.set_volume(desired_volume)
-        # TODO only do this when the slider is changed?
 
         time.sleep(1)
 
