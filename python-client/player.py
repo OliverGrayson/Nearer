@@ -17,6 +17,9 @@ def linear_to_mbels(val):
     return 2000 * math.log(val, 10)
 def set_volume(vol):
     global current_volume
+    if vol == current_volume:
+        return
+
     current_volume = vol
 
     if player:

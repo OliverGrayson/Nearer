@@ -190,11 +190,13 @@ def on_skip(*args):
     player.stop()
     socket.emit("done")
 
+closed = False
+
 def main_update_loop():
     last_id = None
     global thumbnail_img
 
-    while True:
+    while not closed:
         if player.stop_if_done():
             socket.emit("done")
 
@@ -214,11 +216,11 @@ def main_update_loop():
             progress_display.config(text="{} of {}".format(current_progress, duration))
 
         desired_volume = volume_slider.get() / 100
-        if desired_volume != player.current_volume:
-            player.set_volume(desired_volume)
+        player.set_volume(desired_volume)
 
 def socket_update_loop():
-    socket.wait()
+    while not closed:
+        socket.wait(seconds=1)
 
 def reconnect(initial_connection=False):
     global socket
@@ -243,12 +245,10 @@ reconnect(initial_connection=True)
 set_interval(ping, 10)
 socket_updater_thread = threading.Thread(target=socket_update_loop)
 main_updater_thread = threading.Thread(target=main_update_loop)
-socket_updater_thread.setDaemon(True)
-main_updater_thread.setDaemon(True) # threads should stop when window exits
 socket_updater_thread.start()
 main_updater_thread.start()
 
 root.mainloop()
-
-socket.disconnect()
+closed = True
 player.stop()
+socket.disconnect()
