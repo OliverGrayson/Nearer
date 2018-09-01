@@ -205,8 +205,6 @@ def connect(wait_for_connection):
     socket.on('disconnect', on_disconnect)
 
 def socket_update_loop():
-    last_id = None
-    global thumbnail_img
     global reconnect_requested
 
     connect(True)
@@ -241,6 +239,9 @@ def reconnect():
 reconnect_button.config(command=reconnect)
 
 def gui_update_loop():
+    last_id = None
+    global thumbnail_img
+    
     while not closed:
         # GUI updates
         current_vid_data = player.current_vid_data
