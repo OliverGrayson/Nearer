@@ -209,7 +209,7 @@ def socket_update_loop():
     global reconnect_requested
 
     connect(True)
-    pinger = SetInterval(ping, 10)
+    pinger = SetInterval(ping, 10, wait=False)
 
     while not closed:
         # perform all socket-related actions
@@ -229,7 +229,7 @@ def socket_update_loop():
             time.sleep(3)
 
             connect(True) # TODO socket.connect() causes an error in server.py
-            pinger.restart()
+            pinger.restart(wait=False)
 
     pinger.cancel()
 
