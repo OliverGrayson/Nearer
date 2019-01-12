@@ -11,8 +11,8 @@ SERVER, PORT = 'blacker.caltech.edu', 27036
 
 root=Tk()
 root.title("Nearer")
-root.geometry("800x480") #x600") # for testing
-#root.attributes('-fullscreen', True)
+root.geometry("800x480")
+root.attributes('-fullscreen', True)
 root.resizable(0, 0)
 
 # make sure nothing gets too close (within 15px) to the edge
