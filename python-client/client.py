@@ -60,7 +60,7 @@ CONTROL_BUTTON_WIDTH = 10
 CONTROL_BUTTON_PADDING = 2
 THUMB_WIDTH_PX = 300
 
-DEFAULT_VOLUME = 100
+DEFAULT_VOLUME = 50
 
 Label(main_box, text="Title:", font=LABEL_FONT).grid(row=0, column=0, sticky=E)
 Label(main_box, text="Progress:", font=LABEL_FONT).grid(row=1, column=0, sticky=E)
@@ -86,7 +86,7 @@ skip_button = Button(controls_frame, text="Skip", command=lambda: server_action(
 pause_button = Button(controls_frame, text="Pause", command=lambda: server_action('pause'), font=BUTTON_FONT, width=CONTROL_BUTTON_WIDTH)
 volume_slider = Scale(main_box, from_=0, to=100, orient=HORIZONTAL)
 volume_slider.set(DEFAULT_VOLUME)
-thumbnail_img = load_tk_image("http://via.placeholder.com/{}x{}?text=?".format(THUMB_WIDTH_PX, int(THUMB_WIDTH_PX*0.75)))
+thumbnail_img = load_tk_image("http://via.placeholder.com/{}x{}?text=?".format(THUMB_WIDTH_PX, int(THUMB_WIDTH_PX*9/16)))
 thumbnail = Label(main_box, image = thumbnail_img, anchor="e")
 
 title_display.grid(row=0, column=1, sticky=W)
