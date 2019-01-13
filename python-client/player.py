@@ -27,7 +27,7 @@ def set_volume(vol):
             player.mute()
         else:
             player.unmute()
-            player.set_volume(linear_to_mbels(vol))
+            player.set_volume(vol)
 
 
 vid_data_cache = {}
