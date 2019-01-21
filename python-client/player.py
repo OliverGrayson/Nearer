@@ -37,14 +37,15 @@ def get_vid_data(id):
         vid_data_cache[id] = (video.getbestaudio().url, video.title, video.duration, video.bigthumb, id)
     return vid_data_cache[id]
 
+# reduce between-song latency by loading the player URL ahead of time
 def prep_queue():
     f = requests.get(STATUS_URL)
     data = f.json()
-    to_download = set(data["queue"])
+    to_download = { item["vid"] for item in data["queue"] }
     if data.get("current") is not None:
-        to_download.add(data["current"])
+        to_download.add(data["current"]["vid"])
     for id in to_download:
-        get_vid_data(id) # ensure we have a player url for everybody in the queue
+        get_player_url(id) # ensure we have a player url for everybody in the queue
 queue_loader = SetInterval(prep_queue, 10)
 
 def get_timestamp(seconds):
