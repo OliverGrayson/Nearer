@@ -45,7 +45,7 @@ def prep_queue():
     if data.get("current") is not None:
         to_download.add(data["current"]["vid"])
     for id in to_download:
-        get_player_url(id) # ensure we have a player url for everybody in the queue
+        get_vid_data(id) # ensure we have a player url for everybody in the queue
 queue_loader = SetInterval(prep_queue, 10)
 
 def get_timestamp(seconds):
