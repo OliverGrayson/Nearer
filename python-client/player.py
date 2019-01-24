@@ -89,6 +89,8 @@ def stop():
     global player_stop_time
     global current_vid_data
 
+    if player is True:
+        player = None
     if player is not None:
         try:
             player_stop_time = get_time()
@@ -101,13 +103,9 @@ def stop():
         tmp.quit() # mark player as dead before we block on quitting it
 
 def stop_if_done():
-    global player
     if player is None:
         return False
-    elif player is True:
-        player = None
-        return True # we're skipping a bad song
-    elif player._process is None or player._process.poll() is not None:
+    elif player is True or player._process is None or player._process.poll() is not None:
         # TODO: this seems to be the how OMXPlayer internally detects whether a
         # player is done, but a try-catech may work better
         stop()
