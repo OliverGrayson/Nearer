@@ -33,8 +33,11 @@ def set_volume(vol):
 vid_data_cache = {}
 def get_vid_data(id):
     if id not in vid_data_cache:
-        video = pafy.new("https://youtube.com/watch?v=" + id)
-        vid_data_cache[id] = (video.getbestaudio().url, video.title, video.duration, video.bigthumb, id)
+        try:
+            video = pafy.new("https://youtube.com/watch?v=" + id)
+            vid_data_cache[id] = (video.getbestaudio().url, video.title, video.duration, video.bigthumb, id)
+        except OSError:
+            vid_data_cache[id] = None # indicates that video is UNAVAILABLE (premium only, copyright blocked, etc)
     return vid_data_cache[id]
 
 # reduce between-song latency by loading the player URL ahead of time
@@ -58,6 +61,10 @@ def get_timestamp(seconds):
 def play(id, start_time=0):
     global current_vid_data
     current_vid_data = get_vid_data(id)
+    if current_vid_data is None:
+        player = True
+        return
+
     play_url = current_vid_data[0]
 
     args = ["-o", "local"]
@@ -94,8 +101,12 @@ def stop():
         tmp.quit() # mark player as dead before we block on quitting it
 
 def stop_if_done():
+    global player
     if player is None:
         return False
+    elif player is True:
+        player = False
+        return True # we're skipping a bad song
     elif player._process is None or player._process.poll() is not None:
         # TODO: this seems to be the how OMXPlayer internally detects whether a
         # player is done, but a try-catech may work better
