@@ -105,7 +105,7 @@ def stop_if_done():
     if player is None:
         return False
     elif player is True:
-        player = False
+        player = None
         return True # we're skipping a bad song
     elif player._process is None or player._process.poll() is not None:
         # TODO: this seems to be the how OMXPlayer internally detects whether a
