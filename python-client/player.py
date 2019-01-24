@@ -36,7 +36,7 @@ def get_vid_data(id):
         try:
             video = pafy.new("https://youtube.com/watch?v=" + id)
             vid_data_cache[id] = (video.getbestaudio().url, video.title, video.duration, video.bigthumb, id)
-        except OSError:
+        except (OSError, ValueError) as _:
             vid_data_cache[id] = None # indicates that video is UNAVAILABLE (premium only, copyright blocked, etc)
     return vid_data_cache[id]
 
