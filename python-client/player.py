@@ -32,7 +32,7 @@ def set_volume(vol):
 
 vid_data_cache = {}
 def get_vid_data(id):
-    if id not in vid_data_cache:
+    if id not in vid_data_cache or vid_data_cache[id] is None:
         try:
             video = pafy.new("https://youtube.com/watch?v=" + id)
             vid_data_cache[id] = (video.getbestaudio().url, video.title, video.duration, video.bigthumb, id)
