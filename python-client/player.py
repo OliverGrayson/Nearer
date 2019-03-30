@@ -30,26 +30,32 @@ def set_volume(vol):
             player.set_volume(vol)
 
 
-vid_data_cache = {}
 def get_vid_data(id):
-    if id not in vid_data_cache or vid_data_cache[id] is None:
-        try:
-            video = pafy.new("https://youtube.com/watch?v=" + id)
-            vid_data_cache[id] = (video.getbestaudio().url, video.title, video.duration, video.bigthumb, id)
-        except (OSError, ValueError) as _:
-            vid_data_cache[id] = None # indicates that video is UNAVAILABLE (premium only, copyright blocked, etc)
-    return vid_data_cache[id]
-
-# reduce between-song latency by loading the player URL ahead of time
-def prep_queue():
-    f = requests.get(STATUS_URL)
-    data = f.json()
-    to_download = { item["vid"] for item in data["queue"] }
-    if data.get("current") is not None:
-        to_download.add(data["current"]["vid"])
-    for id in to_download:
-        get_vid_data(id) # ensure we have a player url for everybody in the queue
-queue_loader = SetInterval(prep_queue, 10)
+    try:
+        video = pafy.new("https://youtube.com/watch?v=" + id)
+        return (video.getbestaudio().url, video.title, video.duration, video.bigthumb, id)
+    except (OSError, ValueError) as _:
+        return None # indicates that video is UNAVAILABLE (premium only, copyright blocked, etc)
+# vid_data_cache = {}
+# def get_vid_data(id):
+#     if id not in vid_data_cache or vid_data_cache[id] is None:
+#         try:
+#             video = pafy.new("https://youtube.com/watch?v=" + id)
+#             vid_data_cache[id] = (video.getbestaudio().url, video.title, video.duration, video.bigthumb, id)
+#         except (OSError, ValueError) as _:
+#             vid_data_cache[id] = None # indicates that video is UNAVAILABLE (premium only, copyright blocked, etc)
+#     return vid_data_cache[id]
+#
+# # reduce between-song latency by loading the player URL ahead of time
+# def prep_queue():
+#     f = requests.get(STATUS_URL)
+#     data = f.json()
+#     to_download = { item["vid"] for item in data["queue"] }
+#     if data.get("current") is not None:
+#         to_download.add(data["current"]["vid"])
+#     for id in to_download:
+#         get_vid_data(id) # ensure we have a player url for everybody in the queue
+# queue_loader = SetInterval(prep_queue, 10)
 
 def get_timestamp(seconds):
     hours = seconds // 3600
