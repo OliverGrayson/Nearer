@@ -193,7 +193,6 @@ def on_pause(*args):
 def on_skip(*args):
     print("Received skip request")
     player.stop()
-    socket.emit("done")
 
 closed = False
 close_event = threading.Event()
