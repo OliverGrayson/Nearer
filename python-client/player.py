@@ -83,10 +83,10 @@ def play(id, start_time=0, done_callback=None):
     global player_start_time
     if player is None:
         player = OMXPlayer(play_url, args=args)
-        player.exitEvent += lambda _, _: stop()
+        player.exitEvent += lambda p, code: stop()
 
         if done_callback:
-            player.exitEvent += lambda _, _: done_callback()
+            player.exitEvent += lambda p, code: done_callback()
 
         player_start_time = time.time() - start_time
 
