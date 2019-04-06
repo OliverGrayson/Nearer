@@ -64,7 +64,7 @@ def get_timestamp(seconds):
     seconds -= 60 * minutes
     return "{:02}:{:02}:{:02}".format(hours, minutes, seconds)
 
-def play(id, start_time=0):
+def play(id, start_time=0, done_callback=None):
     global current_vid_data
     current_vid_data = get_vid_data(id)
     if current_vid_data is None:
@@ -83,6 +83,11 @@ def play(id, start_time=0):
     global player_start_time
     if player is None:
         player = OMXPlayer(play_url, args=args)
+        player.exitEvent += lambda _, _: stop()
+
+        if done_callback:
+            player.exitEvent += lambda _, _: done_callback()
+
         player_start_time = time.time() - start_time
 
         if current_volume == 0:
@@ -107,16 +112,6 @@ def stop():
         player = None
         current_vid_data = None
         tmp.quit() # mark player as dead before we block on quitting it
-
-def stop_if_done():
-    if player is None:
-        return False
-    elif player is True or player._process is None or player._process.poll() is not None:
-        # TODO: this seems to be the how OMXPlayer internally detects whether a
-        # player is done, but a try-catech may work better
-        stop()
-        return True
-    return False
 
 def get_time():
     if player is None:

@@ -174,10 +174,14 @@ def on_status(status):
 
     status_display.config(text=status)
 
+
+def emit_done():
+    socket.emit("done")
+
 @indicates_connection
 def on_play(req):
     print("Play requested for {} at {}".format( req["video"], req["start"] ))
-    player.play(req["video"], req["start"])
+    player.play(req["video"], req["start"], done_callback=emit_done)
 
 @indicates_connection
 def on_pause(*args):
@@ -215,8 +219,6 @@ def socket_update_loop():
     while not close_event.is_set():
         # perform all socket-related actions
         socket.wait(seconds=1)
-        if player.stop_if_done():
-            socket.emit("done")
 
         # reconnect if necessary
         if reconnect_requested:
