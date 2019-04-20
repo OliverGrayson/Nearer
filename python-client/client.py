@@ -6,6 +6,12 @@ from socketIO_client import SocketIO
 import time
 from interval import *
 import player
+import logging
+
+logging.basicConfig(filename="/home/pi/nearer.log", filemode='a',
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.DEBUG)
+logging.info("Nearer client started")
 
 SERVER, PORT = 'blacker.caltech.edu', 27036
 
@@ -143,6 +149,7 @@ def on_disconnect():
     connected = False
     if not closed: # do not try to change data on closed window
         connection_status.config(text="☒", foreground="#aa0000")
+    logging.info("disconnected")
 def wait_for_connect(f):
     def _decorator(*args, **kwargs):
         while not connected:
@@ -176,22 +183,23 @@ def on_status(status):
 
 
 def emit_done():
+    logging.debug("emitting 'done'")
     socket.emit("done")
 
 @indicates_connection
 def on_play(req):
-    print("Play requested for {} at {}".format( req["video"], req["start"] ))
+    logging.debug("Play requested for {} at {}".format( req["video"], req["start"] ))
     player.play(req["video"], req["start"], done_callback=emit_done)
 
 @indicates_connection
 def on_pause(*args):
-    print("Paused at {}".format(player.get_time()))
+    logging.debug("Paused at {}".format(player.get_time()))
     socket.emit('paused', player.get_time())
     player.stop()
 
 @indicates_connection
 def on_skip(*args):
-    print("Received skip request")
+    logging.debug("Received skip request")
     player.stop()
 
 closed = False
@@ -270,6 +278,7 @@ socket_updater_thread = threading.Thread(target=socket_update_loop)
 gui_updater_thread = threading.Thread(target=gui_update_loop)
 socket_updater_thread.start()
 gui_updater_thread.start()
+logging.info("all threads initialized")
 
 root.mainloop() # runs until window is closed
 

@@ -31,11 +31,13 @@ def set_volume(vol):
 
 
 def get_vid_data(id):
+    logging.debug("video data requested for %s", id)
     try:
         video = pafy.new("https://youtube.com/watch?v=" + id)
         return (video.getbestaudio().url, video.title, video.duration, video.bigthumb, id)
     except (OSError, ValueError) as _:
         return None # indicates that video is UNAVAILABLE (premium only, copyright blocked, etc)
+
 # vid_data_cache = {}
 # def get_vid_data(id):
 #     if id not in vid_data_cache or vid_data_cache[id] is None:
@@ -93,7 +95,7 @@ def play(id, start_time=0, done_callback=None):
         if current_volume == 0:
             player.mute()
 
-        print("Started OMXPlayer for {} at {}".format(id, start_time))
+        logging.debug("Started OMXPlayer for {} at {}".format(id, start_time))
 
 def stop():
     global player
