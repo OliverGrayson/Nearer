@@ -10,7 +10,7 @@ import logging
 
 logging.basicConfig(filename="/home/pi/nearer.log", filemode='a',
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.DEBUG)
+    level=logging.INFO)
 logging.info("Nearer client started")
 
 SERVER, PORT = 'blacker.caltech.edu', 27036
@@ -183,23 +183,23 @@ def on_status(status):
 
 
 def emit_done():
-    logging.debug("emitting 'done'")
+    logging.info("emitting 'done'")
     socket.emit("done")
 
 @indicates_connection
 def on_play(req):
-    logging.debug("Play requested for {} at {}".format( req["video"], req["start"] ))
+    logging.info("Play requested for {} at {}".format( req["video"], req["start"] ))
     player.play(req["video"], req["start"], done_callback=emit_done)
 
 @indicates_connection
 def on_pause(*args):
-    logging.debug("Paused at {}".format(player.get_time()))
+    logging.info("Paused at {}".format(player.get_time()))
     socket.emit('paused', player.get_time())
     player.stop()
 
 @indicates_connection
 def on_skip(*args):
-    logging.debug("Received skip request")
+    logging.info("Received skip request")
     player.stop()
 
 closed = False

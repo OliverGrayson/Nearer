@@ -4,6 +4,7 @@ from interval import *
 import requests
 import time
 import math
+import logging
 
 STATUS_URL = "http://blacker.caltech.edu:27036/status"
 
@@ -31,7 +32,7 @@ def set_volume(vol):
 
 
 def get_vid_data(id):
-    logging.debug("video data requested for %s", id)
+    logging.info("video data requested for %s", id)
     try:
         video = pafy.new("https://youtube.com/watch?v=" + id)
         return (video.getbestaudio().url, video.title, video.duration, video.bigthumb, id)
@@ -95,7 +96,7 @@ def play(id, start_time=0, done_callback=None):
         if current_volume == 0:
             player.mute()
 
-        logging.debug("Started OMXPlayer for {} at {}".format(id, start_time))
+        logging.info("Started OMXPlayer for {} at {}".format(id, start_time))
 
 def stop():
     global player
