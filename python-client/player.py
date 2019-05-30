@@ -3,6 +3,7 @@ from omxplayer.player import OMXPlayer, OMXPlayerDeadError
 from interval import *
 import requests
 import time
+import datetime
 import math
 import logging
 
@@ -30,35 +31,39 @@ def set_volume(vol):
             player.unmute()
             player.set_volume(vol)
 
-
-def get_vid_data(id):
-    logging.info("video data requested for %s", id)
-    try:
-        video = pafy.new("https://youtube.com/watch?v=" + id)
-        return (video.audiostreams[0].url, video.title, video.duration, video.bigthumb, id)
-    except (OSError, ValueError) as _:
-        return None # indicates that video is UNAVAILABLE (premium only, copyright blocked, etc)
-
-# vid_data_cache = {}
+# more bare-bones version of get_vid_data usef for testing
 # def get_vid_data(id):
-#     if id not in vid_data_cache or vid_data_cache[id] is None:
-#         try:
-#             video = pafy.new("https://youtube.com/watch?v=" + id)
-#             vid_data_cache[id] = (video.getbestaudio().url, video.title, video.duration, video.bigthumb, id)
-#         except (OSError, ValueError) as _:
-#             vid_data_cache[id] = None # indicates that video is UNAVAILABLE (premium only, copyright blocked, etc)
-#     return vid_data_cache[id]
-#
-# # reduce between-song latency by loading the player URL ahead of time
-# def prep_queue():
-#     f = requests.get(STATUS_URL)
-#     data = f.json()
-#     to_download = { item["vid"] for item in data["queue"] }
-#     if data.get("current") is not None:
-#         to_download.add(data["current"]["vid"])
-#     for id in to_download:
-#         get_vid_data(id) # ensure we have a player url for everybody in the queue
-# queue_loader = SetInterval(prep_queue, 10)
+#     logging.info("video data requested for %s", id)
+#     try:
+#         video = pafy.new(id)
+#         return (video.audiostreams[0].url, video.title, video.duration, video.bigthumb, id)
+#     except (OSError, ValueError) as _:
+#         return None # indicates that video is UNAVAILABLE (premium only, copyright blocked, etc)
+
+# class Video(object):
+# TODO refactor: encapsulate all data in fields of Video (currently tuples) as objects
+
+vid_data_cache = {}
+def get_vid_data(id): # TODO thread safety?
+    if id not in vid_data_cache or vid_data_cache[id] is None or datetime.datetime.now() - vid_data_cache[id][5] > datetime.timedelta(hours=1):
+        logging.info("refreshing video data for %s", id)
+        try:
+            video = pafy.new(id)
+            vid_data_cache[id] = (video.audiostreams[0].url, video.title, video.duration, video.bigthumb, id, datetime.datetime.now())
+        except (OSError, ValueError) as _:
+            vid_data_cache[id] = None # indicates that video is UNAVAILABLE (premium only, copyright blocked, etc)
+    return vid_data_cache[id]
+
+# reduce between-song latency by loading the player URL ahead of time
+def prep_queue():
+    f = requests.get(STATUS_URL)
+    data = f.json()
+    to_download = { item["vid"] for item in data["queue"] }
+    if data.get("current") is not None:
+        to_download.add(data["current"]["vid"])
+    for id in to_download:
+        get_vid_data(id) # ensure we have a player url for everybody in the queue
+queue_loader = SetInterval(prep_queue, 60)
 
 def get_timestamp(seconds):
     hours = seconds // 3600
