@@ -35,7 +35,7 @@ def get_vid_data(id):
     logging.info("video data requested for %s", id)
     try:
         video = pafy.new("https://youtube.com/watch?v=" + id)
-        return (video.getbestaudio().url, video.title, video.duration, video.bigthumb, id)
+        return (video.audiostreams[0].url, video.title, video.duration, video.bigthumb, id)
     except (OSError, ValueError) as _:
         return None # indicates that video is UNAVAILABLE (premium only, copyright blocked, etc)
 
