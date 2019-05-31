@@ -76,7 +76,8 @@ def play(id, start_time=0, done_callback=None):
     global current_vid_data
     current_vid_data = get_vid_data(id)
     if current_vid_data is None:
-        player = True
+        logging.info("{} seems to be unavailable".format(id))
+        done_callback()
         return
 
     play_url = current_vid_data[0]
@@ -108,8 +109,6 @@ def stop():
     global player_stop_time
     global current_vid_data
 
-    if player is True:
-        player = None
     if player is not None:
         try:
             player_stop_time = get_time()
