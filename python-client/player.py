@@ -61,13 +61,13 @@ class Player:
             args += ["--pos", get_timestamp(self.start_time)]
         # if current_volume != 1 and current_volume != 0:
         #     args += ["--vol", str(linear_to_mbels(current_volume))]
-        args += ["--vol", str(linear_to_mbels(0.1))] # TODO testing during quiet hours
+        args += ["--vol", str(linear_to_mbels(0.01))] # TODO testing during quiet hours
 
-        if current_player is not None:
-            current_player.stop()
-            Player.current_player = self
+        if Player.current_player is not None:
+            Player.current_player.stop()
+        Player.current_player = self
 
-        self.omx = OMXPlayer(play_url, args=args)
+        self.omx = OMXPlayer(self.vid_data.url, args=args)
         self.omx.exitEvent += lambda p, code: stop()
 
         if self.done:
@@ -75,7 +75,7 @@ class Player:
 
         self.start_timestamp = time.time() - self.start_time
 
-        if current_volume == 0:
+        if Player.current_volume == 0:
             self.omx.mute()
 
         logging.info("Started OMXPlayer for {} at {}".format(id, self.start_time))
@@ -118,7 +118,7 @@ class VideoData:
     data_loading_lock = threading.Lock()
 
     def load_data(self, id):
-        data_loading_lock.acquire()
+        VideoData.data_loading_lock.acquire()
 
         logging.info("refreshing video data for {}".format(id))
         self.id = id
@@ -139,7 +139,7 @@ class VideoData:
 
         VideoData.cache[id] = self
 
-        data_loading_lock.release()
+        VideoData.data_loading_lock.release()
 
     @classmethod
     def cache_valid(cls, id):
@@ -160,9 +160,9 @@ class VideoData:
 
     def __init__(self, id):
         if VideoData.cache_valid(id):
-            self.__dict__.update(cache[id].__dict__)
+            self.__dict__.update(VideoData.cache[id].__dict__)
             # copy from cached vid
         else:
-            load_data(id)
+            self.load_data(id)
 
 queue_loader = SetInterval(VideoData.prep_queue, 30)
