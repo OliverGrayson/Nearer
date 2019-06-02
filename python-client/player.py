@@ -59,9 +59,8 @@ class Player:
         args = ["-o", "local"]
         if self.start_time != 0:
             args += ["--pos", get_timestamp(self.start_time)]
-        # if current_volume != 1 and current_volume != 0:
-        #     args += ["--vol", str(linear_to_mbels(current_volume))]
-        args += ["--vol", str(linear_to_mbels(0.01))] # TODO testing during quiet hours
+        if current_volume != 1 and current_volume != 0:
+            args += ["--vol", str(linear_to_mbels(current_volume))]
 
         if Player.current_player is not None:
             Player.current_player.stop()
@@ -83,7 +82,7 @@ class Player:
 
     def stop(self):
         Player.current_player = None
-        if player.status == PlayerStatus.PLAYING:
+        if Player.status == PlayerStatus.PLAYING:
             self.omx.quit() # mark player as dead before we block on quitting it
         else:
             pass # TODO stop in process of getting data, downloading, etc
