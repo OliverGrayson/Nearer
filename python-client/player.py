@@ -58,8 +58,9 @@ class Player:
         args = ["-o", "local"]
         if self.start_time != 0:
             args += ["--pos", get_timestamp(self.start_time)]
-        if current_volume != 1 and current_volume != 0:
-            args += ["--vol", str(linear_to_mbels(current_volume))]
+        # if current_volume != 1 and current_volume != 0:
+        #     args += ["--vol", str(linear_to_mbels(current_volume))]
+        args += ["--vol", str(linear_to_mbels(0.1))] # TODO testing during quiet hours 
 
         if current_player is not None:
             current_player.stop()
@@ -81,7 +82,7 @@ class Player:
 
     def stop(self):
         Player.current_player = None
-        if player.status = PlayerStatus.PLAYING:
+        if player.status == PlayerStatus.PLAYING:
             self.omx.quit() # mark player as dead before we block on quitting it
         else:
             pass # TODO stop in process of getting data, downloading, etc
@@ -108,7 +109,7 @@ class Player:
                 Player.current_player.omx.mute()
             else:
                 Player.current_player.omx.unmute()
-                Player.current_player.omx.set_volume(vol
+                Player.current_player.omx.set_volume(vol)
 
 class VideoData:
     cache = {}
@@ -141,13 +142,13 @@ class VideoData:
     @classmethod
     def cache_valid(cls, id):
         return \
-            (id in cache) and
-            (not cache[id].unavailable) and
+            (id in cache) and \
+            (not cache[id].unavailable) and \
             (datetime.datetime.now() - cache[id].last_updated)
 
     # reduce between-song latency by loading the player URL ahead of time
     @classmethod
-    def prep_queue():
+    def prep_queue(cls):
         f = requests.get(STATUS_URL)
         data = f.json()
         to_download = { item["vid"] for item in data["queue"] }
