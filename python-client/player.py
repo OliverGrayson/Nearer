@@ -93,7 +93,7 @@ class Player:
         if Player.current_player:
             Player.current_player.stop()
 
-    def get_time():
+    def get_time(self):
         if Player.status == PlayerStatus.PLAYING:
             return time.time() - self.start_timestamp
         else:
