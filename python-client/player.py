@@ -68,7 +68,7 @@ class Player:
         Player.current_player = self
 
         self.omx = OMXPlayer(self.vid_data.url, args=args)
-        self.omx.exitEvent += lambda p, code: stop()
+        self.omx.exitEvent += lambda p, code: self.stop()
 
         if self.done:
             self.omx.exitEvent += lambda p, code: self.done()
@@ -78,7 +78,7 @@ class Player:
         if Player.current_volume == 0:
             self.omx.mute()
 
-        logging.info("Started OMXPlayer for {} at {}".format(id, self.start_time))
+        logging.info("Started OMXPlayer for {} at {}".format(self.vid_data.id, self.start_time))
         Player.status = PlayerStatus.PLAYING
 
     def stop(self):
@@ -94,7 +94,10 @@ class Player:
             Player.current_player.stop()
 
     def get_time():
-        return time.time() - self.start_timestamp
+        if Player.status == PlayerStatus.PLAYING:
+            return time.time() - self.start_timestamp
+        else:
+            return 0
         # TODO: using player.position() seems cleaner but resulted in resumes
         # ~10 seconds off from the pauses
 

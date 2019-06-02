@@ -196,7 +196,7 @@ def on_play(req):
 
 @indicates_connection
 def on_pause(*args):
-    if player.Player.current_player:
+    if player.Player.status == PlayerStatus.PLAYING:
         t = player.Player.current_player.get_time()
     else:
         t = 0
