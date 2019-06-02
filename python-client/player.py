@@ -148,7 +148,7 @@ class VideoData:
         return \
             (id in VideoData.cache) and \
             (not VideoData.cache[id].unavailable) and \
-            (datetime.datetime.now() - VideoData.cache[id].last_updated)
+            (datetime.datetime.now() - VideoData.cache[id].last_updated > datetime.timedelta(hours=6))
 
     # reduce between-song latency by loading the player URL ahead of time
     @classmethod
