@@ -46,7 +46,7 @@ class Player:
         self.done = done_callback
 
         if self.vid_data.unavailable:
-            logging.info(f"{id} seems to be unavailable")
+            logging.info("{} seems to be unavailable".format(id))
             done_callback()
         elif self.vid_data.streamable:
             self.play()
@@ -76,7 +76,7 @@ class Player:
         if current_volume == 0:
             self.omx.mute()
 
-        logging.info(f"Started OMXPlayer for {id} at {self.start_time}")
+        logging.info("Started OMXPlayer for {} at {}".format(id, self.start_time))
         Player.status = PlayerStatus.PLAYING
 
     def stop(self):
@@ -117,7 +117,7 @@ class VideoData:
     def load_data(self, id):
         data_loading_lock.acquire()
 
-        logging.info(f"refreshing video data for {id}")
+        logging.info("refreshing video data for {}".format(id))
         self.id = id
         try:
             video = pafy.new(id)

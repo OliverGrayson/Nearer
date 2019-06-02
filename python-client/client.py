@@ -274,7 +274,7 @@ def gui_update_loop():
             status_display.config(text="Playing")
             current_progress = player.get_timestamp(int(player.Player.current_player.get_time()))
             duration = current_vid_data.duration
-            progress_display.config(text=f"{current_progress} of {duration}")
+            progress_display.config(text="{} of {}".format(current_progress, duration))
 
         time.sleep(1)
 
