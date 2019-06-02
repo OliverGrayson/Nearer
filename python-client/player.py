@@ -28,12 +28,13 @@ class PlayerStatus(enum.Enum):
     Enum for possible player states. Note that pauses are not represented:
     the player is simply re-created at the proper time when resuming
     """
+    STOPPED = 0
     LOADING_DATA = 1
     DOWNLOADING = 2
     PLAYING = 3
 class Player:
     current_player = None # avoid overlapping songs
-    status = PlayerStatus.LOADING_DATA
+    status = PlayerStatus.STOPPED
 
     def __init__(self, id, start_time=0, done_callback=None):
         """
@@ -60,7 +61,7 @@ class Player:
             args += ["--pos", get_timestamp(self.start_time)]
         # if current_volume != 1 and current_volume != 0:
         #     args += ["--vol", str(linear_to_mbels(current_volume))]
-        args += ["--vol", str(linear_to_mbels(0.1))] # TODO testing during quiet hours 
+        args += ["--vol", str(linear_to_mbels(0.1))] # TODO testing during quiet hours
 
         if current_player is not None:
             current_player.stop()
@@ -89,7 +90,8 @@ class Player:
 
     @classmethod
     def stop_current(self):
-        Player.current_player.stop()
+        if Player.current_player:
+            Player.current_player.stop()
 
     def get_time():
         return time.time() - self.start_timestamp
@@ -142,9 +144,9 @@ class VideoData:
     @classmethod
     def cache_valid(cls, id):
         return \
-            (id in cache) and \
-            (not cache[id].unavailable) and \
-            (datetime.datetime.now() - cache[id].last_updated)
+            (id in VideoData.cache) and \
+            (not VideoData.cache[id].unavailable) and \
+            (datetime.datetime.now() - VideoData.cache[id].last_updated)
 
     # reduce between-song latency by loading the player URL ahead of time
     @classmethod
@@ -157,7 +159,7 @@ class VideoData:
             VideoData(id)
 
     def __init__(self, id):
-        if cache_valid(id):
+        if VideoData.cache_valid(id):
             self.__dict__.update(cache[id].__dict__)
             # copy from cached vid
         else:

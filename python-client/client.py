@@ -196,15 +196,18 @@ def on_play(req):
 
 @indicates_connection
 def on_pause(*args):
-    t = player.Player.current_player.get_time()
+    if player.Player.status == player.PlayerStatus.PLAYING:
+        t = player.Player.current_player.get_time()
+    else:
+        t = 0
     logging.info("Paused at {}".format(t))
     socket.emit('paused', t)
-    player.Player.current_player.stop()
+    player.Player.stop_current()
 
 @indicates_connection
 def on_skip(*args):
     logging.info("Received skip request")
-    player.Player.current_player.stop()
+    player.Player.stop_current()
 
 closed = False
 close_event = threading.Event()
@@ -237,7 +240,7 @@ def socket_update_loop():
 
             on_disconnect()
             pinger.cancel()
-            player.Player.current_player.stop()
+            player.Player.stop_current()
             socket.disconnect()
 
             time.sleep(3)
@@ -288,5 +291,5 @@ root.mainloop() # runs until window is closed
 
 closed = True
 close_event.set()
-player.stop()
+player.Player.stop_current()
 socket.disconnect()
