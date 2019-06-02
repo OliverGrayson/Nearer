@@ -59,8 +59,8 @@ class Player:
         args = ["-o", "local"]
         if self.start_time != 0:
             args += ["--pos", get_timestamp(self.start_time)]
-        if current_volume != 1 and current_volume != 0:
-            args += ["--vol", str(linear_to_mbels(current_volume))]
+        if Player.current_volume != 1 and Player.current_volume != 0:
+            args += ["--vol", str(linear_to_mbels(Player.current_volume))]
 
         if Player.current_player is not None:
             Player.current_player.stop()
