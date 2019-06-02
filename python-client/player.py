@@ -1,70 +1,21 @@
 import pafy
+import youtube_dl
 from omxplayer.player import OMXPlayer, OMXPlayerDeadError
 from interval import *
+import threading
 import requests
 import time
 import datetime
 import math
 import logging
+import enum
 
 STATUS_URL = "http://blacker.caltech.edu:27036/status"
+DOWNLOAD_DIR = "~/nearer_downloads/"
 
-player = None
-player_start_time = None
-player_stop_time = 0
-current_vid_data = None
-
-current_volume = 0.5
+# helper functions for volume, time
 def linear_to_mbels(val):
     return 2000 * math.log(val, 10)
-def set_volume(vol):
-    global current_volume
-    if vol == current_volume:
-        return
-
-    current_volume = vol
-
-    if player:
-        if vol == 0:
-            player.mute()
-        else:
-            player.unmute()
-            player.set_volume(vol)
-
-# more bare-bones version of get_vid_data usef for testing
-# def get_vid_data(id):
-#     logging.info("video data requested for %s", id)
-#     try:
-#         video = pafy.new(id)
-#         return (video.audiostreams[0].url, video.title, video.duration, video.bigthumb, id)
-#     except (OSError, ValueError) as _:
-#         return None # indicates that video is UNAVAILABLE (premium only, copyright blocked, etc)
-
-# class Video(object):
-# TODO refactor: encapsulate all data in fields of Video (currently tuples) as objects
-
-vid_data_cache = {}
-def get_vid_data(id): # TODO thread safety?
-    if id not in vid_data_cache or vid_data_cache[id] is None or datetime.datetime.now() - vid_data_cache[id][5] > datetime.timedelta(hours=1):
-        logging.info("refreshing video data for %s", id)
-        try:
-            video = pafy.new(id)
-            vid_data_cache[id] = (video.audiostreams[0].url, video.title, video.duration, video.bigthumb, id, datetime.datetime.now())
-        except (OSError, ValueError) as _:
-            vid_data_cache[id] = None # indicates that video is UNAVAILABLE (premium only, copyright blocked, etc)
-    return vid_data_cache[id]
-
-# reduce between-song latency by loading the player URL ahead of time
-def prep_queue():
-    f = requests.get(STATUS_URL)
-    data = f.json()
-    to_download = { item["vid"] for item in data["queue"] }
-    if data.get("current") is not None:
-        to_download.add(data["current"]["vid"])
-    for id in to_download:
-        get_vid_data(id) # ensure we have a player url for everybody in the queue
-queue_loader = SetInterval(prep_queue, 60)
-
 def get_timestamp(seconds):
     hours = seconds // 3600
     seconds -= 3600 * hours
@@ -72,58 +23,143 @@ def get_timestamp(seconds):
     seconds -= 60 * minutes
     return "{:02}:{:02}:{:02}".format(hours, minutes, seconds)
 
-def play(id, start_time=0, done_callback=None):
-    global current_vid_data
-    current_vid_data = get_vid_data(id)
-    if current_vid_data is None:
-        logging.info("{} seems to be unavailable".format(id))
-        done_callback()
-        return
+class PlayerStatus(enum.Enum):
+    """
+    Enum for possible player states. Note that pauses are not represented:
+    the player is simply re-created at the proper time when resuming
+    """
+    LOADING_DATA = 1
+    DOWNLOADING = 2
+    PLAYING = 3
+class Player:
+    current_player = None # avoid overlapping songs
+    status = PlayerStatus.LOADING_DATA
 
-    play_url = current_vid_data[0]
+    def __init__(self, id, start_time=0, done_callback=None):
+        """
+        make a Player (and start playing it)
+        """
+        Player.status = PlayerStatus.LOADING_DATA
 
-    args = ["-o", "local"]
-    if start_time != 0:
-        args += ["--pos", get_timestamp(start_time)]
-    if current_volume != 1 and current_volume != 0:
-        args += ["--vol", str(linear_to_mbels(current_volume))]
+        self.vid_data = VideoData(id)
+        self.start_time = start_time
+        self.done = done_callback
 
-    global player
-    global player_start_time
-    if player is None:
-        player = OMXPlayer(play_url, args=args)
-        player.exitEvent += lambda p, code: stop()
+        if self.vid_data.unavailable:
+            logging.info(f"{id} seems to be unavailable")
+            done_callback()
+        elif self.vid_data.streamable:
+            self.play()
+        else:
+            self.vid_data.set_download_callback(self.play) # TODO implement
+            Player.status = PlayerStatus.DOWNLOADING
 
-        if done_callback:
-            player.exitEvent += lambda p, code: done_callback()
+    def play(self):
+        args = ["-o", "local"]
+        if self.start_time != 0:
+            args += ["--pos", get_timestamp(self.start_time)]
+        if current_volume != 1 and current_volume != 0:
+            args += ["--vol", str(linear_to_mbels(current_volume))]
 
-        player_start_time = time.time() - start_time
+        if current_player is not None:
+            current_player.stop()
+            Player.current_player = self
+
+        self.omx = OMXPlayer(play_url, args=args)
+        self.omx.exitEvent += lambda p, code: stop()
+
+        if self.done:
+            self.omx.exitEvent += lambda p, code: self.done()
+
+        self.start_timestamp = time.time() - self.start_time
 
         if current_volume == 0:
-            player.mute()
+            self.omx.mute()
 
-        logging.info("Started OMXPlayer for {} at {}".format(id, start_time))
+        logging.info(f"Started OMXPlayer for {id} at {self.start_time}")
+        Player.status = PlayerStatus.PLAYING
 
-def stop():
-    global player
-    global player_stop_time
-    global current_vid_data
+    def stop(self):
+        Player.current_player = None
+        if player.status = PlayerStatus.PLAYING:
+            self.omx.quit() # mark player as dead before we block on quitting it
+        else:
+            pass # TODO stop in process of getting data, downloading, etc
 
-    if player is not None:
-        try:
-            player_stop_time = get_time()
-        except OMXPlayerDeadError:
-            player_stop_time = 0
+    @classmethod
+    def stop_current(self):
+        Player.current_player.stop()
 
-        tmp = player
-        player = None
-        current_vid_data = None
-        tmp.quit() # mark player as dead before we block on quitting it
-
-def get_time():
-    if player is None:
-        return player_stop_time
-    else:
-        return time.time() - player_start_time
+    def get_time():
+        return time.time() - self.start_timestamp
         # TODO: using player.position() seems cleaner but resulted in resumes
         # ~10 seconds off from the pauses
+
+    current_volume = 0.5 # TODO should we allow this to depend on the player?
+    @classmethod
+    def set_volume(cls, vol):
+        if vol == current_volume:
+            return
+
+        Player.current_volume = vol
+
+        if Player.current_player and Player.current_player.status == PlayerStatus.PLAYING:
+            if vol == 0:
+                Player.current_player.omx.mute()
+            else:
+                Player.current_player.omx.unmute()
+                Player.current_player.omx.set_volume(vol
+
+class VideoData:
+    cache = {}
+    data_loading_lock = threading.Lock()
+
+    def load_data(self, id):
+        data_loading_lock.acquire()
+
+        logging.info(f"refreshing video data for {id}")
+        self.id = id
+        try:
+            video = pafy.new(id)
+
+            self.url = video.audiostreams[0].url # TODO actual fix here
+            self.streamable = True
+            self.title = video.title
+            self.duration = video.duration
+            self.thumbnail = video.bigthumb
+            self.last_updated = datetime.datetime.now()
+            self.unavailable = False
+
+        except (OSError, ValueError) as _:
+            self.unavailable = True
+            # indicates that video is UNAVAILABLE (premium only, copyright blocked, etc)
+
+        VideoData.cache[id] = self
+
+        data_loading_lock.release()
+
+    @classmethod
+    def cache_valid(cls, id):
+        return \
+            (id in cache) and
+            (not cache[id].unavailable) and
+            (datetime.datetime.now() - cache[id].last_updated)
+
+    # reduce between-song latency by loading the player URL ahead of time
+    @classmethod
+    def prep_queue():
+        f = requests.get(STATUS_URL)
+        data = f.json()
+        to_download = { item["vid"] for item in data["queue"] }
+
+        for id in to_download:
+            VideoData(id)
+
+    def __init__(self, id):
+        if cache_valid(id):
+            self.__dict__.update(cache[id].__dict__)
+            # copy from cached vid
+        else:
+            load_data(id)
+
+queue_loader = SetInterval(VideoData.prep_queue, 30)

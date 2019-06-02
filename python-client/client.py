@@ -176,8 +176,11 @@ def pong(*args):
 @indicates_connection
 def on_status(status):
     status = status.get("status", "Unknown")
-    if status == "Playing" and player.current_vid_data == None: # not actually "playing" yet
-        status = "Loading next item..."
+    if status == "Playing": # might not actually be "playing" yet
+        if player.Player.status == player.PlayerStatus.LOADING_DATA:
+            status = "Loading song data..."
+        elif player.Player.status == player.PlayerStatus.DOWNLOADING:
+            status = "Downloading next song..."
 
     status_display.config(text=status)
 
@@ -189,18 +192,19 @@ def emit_done():
 @indicates_connection
 def on_play(req):
     logging.info("Play requested for {} at {}".format( req["video"], req["start"] ))
-    player.play(req["video"], req["start"], done_callback=emit_done)
+    player.Player(req["video"], start_time=req["start"], done_callback=emit_done)
 
 @indicates_connection
 def on_pause(*args):
-    logging.info("Paused at {}".format(player.get_time()))
-    socket.emit('paused', player.get_time())
-    player.stop()
+    t = player.Player.current_player.get_time()
+    logging.info("Paused at {}".format(t))
+    socket.emit('paused', t)
+    player.Player.current_player.stop()
 
 @indicates_connection
 def on_skip(*args):
     logging.info("Received skip request")
-    player.stop()
+    player.Player.current_player.stop()
 
 closed = False
 close_event = threading.Event()
@@ -233,7 +237,7 @@ def socket_update_loop():
 
             on_disconnect()
             pinger.cancel()
-            player.stop()
+            player.Player.current_player.stop()
             socket.disconnect()
 
             time.sleep(3)
@@ -244,7 +248,7 @@ def socket_update_loop():
     pinger.cancel()
 
 def update_volume(vol):
-    player.set_volume(int(vol) / 100)
+    player.Player.set_volume(int(vol) / 100)
 def reconnect():
     global reconnect_requested
     reconnect_requested = True
@@ -258,19 +262,19 @@ def gui_update_loop():
 
     while not close_event.is_set():
         # GUI updates
-        current_vid_data = player.current_vid_data
-        if current_vid_data:
-            if current_vid_data[4] != last_id:
-                last_id = current_vid_data[4]
-                title_display.config(text=current_vid_data[1])
+        if player.Player.current_player:
+            current_vid_data = player.Player.current_player.vid_data
+            if current_vid_data.id != last_id:
+                last_id = current_vid_data.id
+                title_display.config(text=current_vid_data.title)
 
-                thumbnail_img = load_tk_image(current_vid_data[3], max_width=THUMB_WIDTH_PX)
+                thumbnail_img = load_tk_image(current_vid_data.thumbnail, max_width=THUMB_WIDTH_PX)
                 thumbnail.config(image=thumbnail_img)
 
             status_display.config(text="Playing")
-            current_progress = player.get_timestamp(int(player.get_time()))
-            duration = current_vid_data[2]
-            progress_display.config(text="{} of {}".format(current_progress, duration))
+            current_progress = player.get_timestamp(int(player.Player.current_player.get_time()))
+            duration = current_vid_data.duration
+            progress_display.config(text=f"{current_progress} of {duration}")
 
         time.sleep(1)
 
