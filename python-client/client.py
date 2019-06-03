@@ -67,7 +67,7 @@ CONTROL_BUTTON_PADDING = 2
 THUMB_WIDTH_PX = 300
 
 DEFAULT_VOLUME = 30
-player.Player.set_volume(DEFAULT_VOLUME)
+player.Player.set_volume(DEFAULT_VOLUME/100)
 
 Label(main_box, text="Title:", font=LABEL_FONT).grid(row=0, column=0, sticky=E)
 Label(main_box, text="Progress:", font=LABEL_FONT).grid(row=1, column=0, sticky=E)
