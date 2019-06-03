@@ -127,7 +127,7 @@ class VideoData:
         self.id = id
         try:
             video = pafy.new(id) # TODO experiement with other formats to guarantee streaming works
-            streamable = filter(lambda s: s.extension == "webm", video.audiostreams)
+            streamable = list(filter(lambda s: s.extension == "webm", video.audiostreams))
 
             if len(streamable) > 0:
                 self.url = streamable[0].url
@@ -137,7 +137,7 @@ class VideoData:
                     "format": "worstaudio",
                     "outtmpl": DOWNLOAD_DIR + "%(id)s.%(ext)s",
                     "progress_hooks": [self.on_download_progress],
-                    "quiet": True}).download(id)
+                    "quiet": True}).download([id])
                 self.streamable = False
 
             self.title = video.title
@@ -180,7 +180,7 @@ class VideoData:
         if dl_callback:
             self.download_callback = dl_callback
         else:
-            self.download_callback = (lambda params: None)
+            self.download_callback = (lambda: None)
 
         if VideoData.cache_valid(id):
             self.__dict__.update(VideoData.cache[id].__dict__)
