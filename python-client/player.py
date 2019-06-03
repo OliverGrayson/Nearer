@@ -55,6 +55,12 @@ class Player:
             # after it's already downloaded and playing
 
     def play(self):
+        t = threading.Timer(1.0, self.__play)
+        # TODO sketchy solution to the fact that the VideoData can't be accessed
+        # by its callback until returns and sets the relevant player variables
+        t.start()
+
+    def __play(self):
         args = ["-o", "local"]
         if self.start_time != 0:
             args += ["--pos", get_timestamp(self.start_time)]
