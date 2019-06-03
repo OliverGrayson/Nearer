@@ -42,7 +42,7 @@ class Player:
         """
         Player.status = PlayerStatus.LOADING_DATA
 
-        self.vid_data = VideoData(id)
+        self.vid_data = VideoData(id, dl_callback=self.play)
         self.start_time = start_time
         self.done = done_callback
 
@@ -52,8 +52,9 @@ class Player:
         elif self.vid_data.streamable:
             self.play()
         else:
-            self.vid_data.set_download_callback(self.play) # TODO implement
             Player.status = PlayerStatus.DOWNLOADING
+            # TODO race condition: player could be set to "downloading"
+            # after it's already downloaded and playing
 
     def play(self):
         args = ["-o", "local"]
@@ -125,10 +126,20 @@ class VideoData:
         logging.info("refreshing video data for {}".format(id))
         self.id = id
         try:
-            video = pafy.new(id)
+            video = pafy.new(id) # TODO experiement with other formats to guarantee streaming works
+            streamable = filter(lambda s: s.extension == "webm", video.audiostreams)
 
-            self.url = video.audiostreams[0].url # TODO actual fix here
-            self.streamable = True
+            if len(streamable) > 0:
+                self.url = streamable[0].url
+                self.streamable = True
+            else:
+                youtube_dl.YoutubeDL(params={
+                    "format": "worstaudio",
+                    "outtmpl": DOWNLOAD_DIR + "%(id)s.%(ext)s",
+                    "progress_hooks": [self.on_download_progress],
+                    "quiet": True}).download(id)
+                self.streamable = False
+
             self.title = video.title
             self.duration = video.duration
             self.thumbnail = video.bigthumb
@@ -142,6 +153,11 @@ class VideoData:
         VideoData.cache[id] = self
 
         VideoData.data_loading_lock.release()
+
+    def on_download_progress(self, params):
+        if params["status"] == "finished":
+            self.url = params["filename"]
+            self.download_callback()
 
     @classmethod
     def cache_valid(cls, id):
@@ -160,7 +176,12 @@ class VideoData:
         for id in to_download:
             VideoData(id)
 
-    def __init__(self, id):
+    def __init__(self, id, dl_callback=None):
+        if dl_callback:
+            self.download_callback = dl_callback
+        else:
+            self.download_callback = (lambda params: None)
+
         if VideoData.cache_valid(id):
             self.__dict__.update(VideoData.cache[id].__dict__)
             # copy from cached vid
