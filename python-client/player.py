@@ -42,16 +42,14 @@ class Player:
         """
         Player.status = PlayerStatus.LOADING_DATA
 
-        self.vid_data = VideoData(id, dl_callback=self.play)
         self.start_time = start_time
         self.done = done_callback
+        self.vid_data = VideoData(id, ready_callback=self.play)
 
         if self.vid_data.unavailable:
             logging.info("{} seems to be unavailable".format(id))
             done_callback()
-        elif self.vid_data.streamable:
-            self.play()
-        else:
+        elif not self.vid_data.streamable:
             Player.status = PlayerStatus.DOWNLOADING
             # TODO race condition: player could be set to "downloading"
             # after it's already downloaded and playing
@@ -85,8 +83,8 @@ class Player:
         Player.current_player = None
         if Player.status == PlayerStatus.PLAYING:
             self.omx.quit() # mark player as dead before we block on quitting it
-        else:
-            pass # TODO stop in process of getting data, downloading, etc
+        elif Player.status in (PlayerStatus.DOWNLOADING, PlayerStatus.LOADING_DATA):
+            self.vid_data.remove_ready_callback()
 
     @classmethod
     def stop_current(self):
@@ -116,6 +114,23 @@ class Player:
                 Player.current_player.omx.unmute()
                 Player.current_player.omx.set_volume(vol)
 
+class YoutubeDownloader(threading.Thread):
+    def __init__(self, id, callback):
+       threading.Thread.__init__(self)
+       self.setDaemon(True)
+       self.id = id
+       self.callback = callback
+    def run(self):
+        youtube_dl.YoutubeDL(params={
+            "format": "worstaudio",
+            "outtmpl": DOWNLOAD_DIR + "%(id)s.%(ext)s",
+            "progress_hooks": [self.on_download_progress],
+            "quiet": True}).download([self.id])
+
+    def on_download_progress(self, params):
+        if params["status"] == "finished":
+            self.callback(params["filename"])
+
 class VideoData:
     cache = {}
     data_loading_lock = threading.Lock()
@@ -127,24 +142,23 @@ class VideoData:
         self.id = id
         try:
             video = pafy.new(id) # TODO experiement with other formats to guarantee streaming works
-            streamable = list(filter(lambda s: s.extension == "webm", video.audiostreams))
-
-            if len(streamable) > 0:
-                self.url = streamable[0].url
-                self.streamable = True
-            else:
-                youtube_dl.YoutubeDL(params={
-                    "format": "worstaudio",
-                    "outtmpl": DOWNLOAD_DIR + "%(id)s.%(ext)s",
-                    "progress_hooks": [self.on_download_progress],
-                    "quiet": True}).download([id])
-                self.streamable = False
 
             self.title = video.title
             self.duration = video.duration
             self.thumbnail = video.bigthumb
             self.last_updated = datetime.datetime.now()
             self.unavailable = False
+
+            streamable = list(filter(lambda s: s.extension == "webm", video.audiostreams))
+            if len(streamable) > 0:
+                self.url = streamable[0].url
+                self.streamable = True
+                self.ready_callback()
+            else:
+                self.streamable = False
+                self.downloaded = False # TODO check if already downloaded? or does YouTubeDL do that?
+                dl_thread = YoutubeDownloader(self.id, self.download_callback)
+                dl_thread.start()
 
         except (OSError, ValueError) as _:
             self.unavailable = True
@@ -154,10 +168,18 @@ class VideoData:
 
         VideoData.data_loading_lock.release()
 
-    def on_download_progress(self, params):
-        if params["status"] == "finished":
-            self.url = params["filename"]
-            self.download_callback()
+    def download_callback(self, url):
+        self.url = url
+        self.downloaded = True
+        self.ready_callback()
+
+    def set_ready_callback(self, new_callback):
+        if self.streamable or self.downloaded:
+            new_callback()
+        self.ready_callback = new_callback
+
+    def remove_ready_callback(self):
+        self.set_ready_callback(lambda: None)
 
     @classmethod
     def cache_valid(cls, id):
@@ -166,7 +188,7 @@ class VideoData:
             (not VideoData.cache[id].unavailable) and \
             (datetime.datetime.now() - VideoData.cache[id].last_updated > datetime.timedelta(hours=6))
 
-    # reduce between-song latency by loading the player URL ahead of time
+    # reduce between-song latency by loading the player URL or downloading the video ahead of time
     @classmethod
     def prep_queue(cls):
         f = requests.get(STATUS_URL)
@@ -176,16 +198,20 @@ class VideoData:
         for id in to_download:
             VideoData(id)
 
-    def __init__(self, id, dl_callback=None):
-        if dl_callback:
-            self.download_callback = dl_callback
+    def __init__(self, id, ready_callback=None):
+        self.streamable = False
+        self.downloaded = False
+        if ready_callback:
+            self.set_ready_callback(ready_callback)
         else:
-            self.download_callback = (lambda: None)
+            self.remove_ready_callback()
 
         if VideoData.cache_valid(id):
             self.__dict__.update(VideoData.cache[id].__dict__)
             # copy from cached vid
         else:
             self.load_data(id)
+
+
 
 queue_loader = SetInterval(VideoData.prep_queue, 30)
