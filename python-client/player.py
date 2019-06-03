@@ -105,13 +105,11 @@ class Player:
         # TODO: using player.position() seems cleaner but resulted in resumes
         # ~10 seconds off from the pauses
 
-    current_volume = 0.5 # TODO should we allow this to depend on the player?
+    current_volume = None
     @classmethod
     def set_volume(cls, vol):
-        if vol == current_volume:
-            return
-
-        Player.current_volume = vol
+        if Player.current_volume == None or vol != Player.current_volume:
+            Player.current_volume = vol
 
         if Player.current_player and Player.current_player.status == PlayerStatus.PLAYING:
             if vol == 0:
