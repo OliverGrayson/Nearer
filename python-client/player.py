@@ -179,6 +179,8 @@ class VideoData:
         self.ready_callback()
 
     def set_ready_callback(self, new_callback):
+        new_callback = new_callback if (new_callback is None) else (lambda: None)
+
         if self.streamable or self.downloaded:
             new_callback()
         self.ready_callback = new_callback
@@ -206,15 +208,13 @@ class VideoData:
     def __init__(self, id, ready_callback=None):
         self.streamable = False
         self.downloaded = False
-        if ready_callback:
-            self.set_ready_callback(ready_callback)
-        else:
-            self.remove_ready_callback()
 
         if VideoData.cache_valid(id):
             self.__dict__.update(VideoData.cache[id].__dict__)
+            self.set_ready_callback(ready_callback)
             # copy from cached vid
         else:
+            self.set_ready_callback(ready_callback)
             self.load_data(id)
 
 
