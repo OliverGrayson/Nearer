@@ -66,7 +66,7 @@ CONTROL_BUTTON_WIDTH = 10
 CONTROL_BUTTON_PADDING = 2
 THUMB_WIDTH_PX = 300
 
-DEFAULT_VOLUME = 30
+DEFAULT_VOLUME = 40
 player.Player.set_volume(DEFAULT_VOLUME/100)
 
 Label(main_box, text="Title:", font=LABEL_FONT).grid(row=0, column=0, sticky=E)
