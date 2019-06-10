@@ -179,7 +179,8 @@ class VideoData:
         self.ready_callback()
 
     def set_ready_callback(self, new_callback):
-        new_callback = new_callback if (new_callback is None) else (lambda: None)
+        if new_callback is None:
+            new_callback = lambda: None
 
         if self.streamable or self.downloaded:
             new_callback()
