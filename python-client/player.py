@@ -11,7 +11,7 @@ import logging
 import enum
 
 STATUS_URL = "http://blacker.caltech.edu:27036/status"
-DOWNLOAD_DIR = "~/nearer_downloads/"
+DOWNLOAD_DIR = "/home/pi/nearer_downloads/"
 
 # helper functions for volume, time
 def linear_to_mbels(val):
@@ -164,8 +164,9 @@ class VideoData:
                 dl_thread = YoutubeDownloader(self.id, self.download_callback)
                 dl_thread.start()
 
-        except (OSError, ValueError) as _:
+        except (OSError, ValueError) as e:
             self.unavailable = True
+            logging.info("{} unavailable because of error: %s", str(id, e))
             # indicates that video is UNAVAILABLE (premium only, copyright blocked, etc)
 
         VideoData.cache[id] = self
