@@ -166,7 +166,7 @@ class VideoData:
 
         except (OSError, ValueError) as e:
             self.unavailable = True
-            logging.info("{} unavailable because of error: %s", str(id, e))
+            logging.info("%s unavailable because of error: %s", id, str(e))
             # indicates that video is UNAVAILABLE (premium only, copyright blocked, etc)
 
         VideoData.cache[id] = self
