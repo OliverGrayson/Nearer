@@ -154,7 +154,7 @@ class VideoData:
             self.unavailable = False
 
             streamable = list(filter(lambda s: s.extension == "webm", video.audiostreams))
-            if len(streamable) > 0:
+            if len(streamable) > 0 and self.duration[:4] != "00:0": # sketchy way of checking if >= 10 mins
                 self.url = streamable[0].url
                 self.streamable = True
                 self.ready_callback()
