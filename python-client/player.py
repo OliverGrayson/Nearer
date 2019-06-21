@@ -203,7 +203,7 @@ class VideoData:
         data = f.json()
         to_download = { item["vid"] for item in data["queue"] }
 
-        for id in to_download:
+        for id in set(to_download):
             VideoData(id)
 
     def __init__(self, id, ready_callback=None):
