@@ -13,7 +13,13 @@ logging.basicConfig(filename="/home/pi/nearer.log", filemode='a',
     level=logging.INFO)
 logging.info("Nearer client started")
 
+
 SERVER, PORT = 'blacker.caltech.edu', 27036
+
+def server_action(action):
+    urlopen("http://{}:{}/{}".format(SERVER, PORT, action))
+
+server_action('pause') # client doesn't start playing, it misses the first "play" emission for some reason
 
 root=Tk()
 root.title("Nearer")
@@ -76,9 +82,6 @@ Label(main_box, text="Connection:", font=LABEL_FONT).grid(row=3, column=0, stick
 Label(main_box).grid(row=5, pady=15)
 Label(main_box, text="Controls:", font=LABEL_FONT).grid(row=6, column=0, sticky=E, pady=20)
 Label(main_box, text="Volume:", font=LABEL_FONT).grid(row=7, column=0, sticky=E, pady=20)
-
-def server_action(action):
-    urlopen("http://{}:{}/{}".format(SERVER, PORT, action))
 
 title_display = Label(main_box, text="No Song Playing", font=INFO_FONT, width=23, anchor="w")
 progress_display = Label(main_box, text="N/A", font=INFO_FONT)
