@@ -1,7 +1,7 @@
 socketIO_client
 pafy
 youtube_dl
-vlc
+python-vlc
 PIL
 pyaudio
 logging
