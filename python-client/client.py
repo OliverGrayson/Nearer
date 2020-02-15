@@ -7,8 +7,9 @@ import time
 from interval import *
 import player
 import logging
+import config
 
-logging.basicConfig(filename="/home/pi/nearer.log", filemode='a',
+logging.basicConfig(filename=config.home_dir + "/nearer.log", filemode='a',
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO)
 logging.info("Nearer client started")
@@ -196,7 +197,10 @@ def emit_done():
 @indicates_connection
 def on_play(req):
     logging.info("Play requested for {} at {}".format( req["video"], req["start"] ))
-    player.Player(req["video"], start_time=req["start"], done_callback=emit_done)
+    if player.Player.isPaused():
+        player.Player.current_player.play()
+    else:
+        player.Player(req["video"], start_time=req["start"], done_callback=emit_done)
 
 @indicates_connection
 def on_pause(*args):
@@ -206,7 +210,8 @@ def on_pause(*args):
         t = 0
     logging.info("Paused at {}".format(t))
     socket.emit('paused', t)
-    player.Player.stop_current()
+    #player.Player.stop_current()
+    player.Player.pause_current()
 
 @indicates_connection
 def on_skip(*args):

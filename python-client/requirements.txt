@@ -1,0 +1,7 @@
+socketIO_client
+pafy
+youtube_dl
+vlc
+PIL
+pyaudio
+logging

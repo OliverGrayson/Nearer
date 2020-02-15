@@ -1,6 +1,6 @@
 import pafy
 import youtube_dl
-from omxplayer.player import OMXPlayer, OMXPlayerDeadError
+import vlc
 from interval import *
 import threading
 import requests
@@ -9,9 +9,10 @@ import datetime
 import math
 import logging
 import enum
+import config
 
 STATUS_URL = "http://blacker.caltech.edu:27036/status"
-DOWNLOAD_DIR = "/home/pi/nearer_downloads/"
+DOWNLOAD_DIR = config.home_dir + "/nearer_downloads/"
 
 # helper functions for volume, time
 def linear_to_mbels(val):
@@ -32,6 +33,7 @@ class PlayerStatus(enum.Enum):
     LOADING_DATA = 1
     DOWNLOADING = 2
     PLAYING = 3
+    PAUSED = 4
 class Player:
     current_player = None # avoid overlapping songs
     status = PlayerStatus.STOPPED
@@ -41,6 +43,12 @@ class Player:
         make a Player (and start playing it)
         """
         Player.status = PlayerStatus.LOADING_DATA
+
+        self.vlc_instance = vlc.Instance()
+        self.player = self.vlc_instance.media_player_new()
+
+        self.player.event_manager().event_attach(vlc.EventType.MediaPlayerEndReached, self.stop)
+        self.player.event_manager().event_attach(vlc.EventType.MediaPlayerStopped, self.stop)
 
         self.start_time = start_time
         self.done = done_callback
@@ -67,35 +75,53 @@ class Player:
         if Player.current_volume != 1 and Player.current_volume != 0:
             args += ["--vol", str(linear_to_mbels(Player.current_volume))]
 
-        if Player.current_player is not None:
+        if Player.current_player is not None and Player.status != PlayerStatus.PAUSED:
             Player.current_player.stop()
         Player.current_player = self
 
-        self.omx = OMXPlayer(self.vid_data.url, args=args)
-        self.omx.exitEvent += lambda p, code: self.stop()
-
-        if self.done:
-            self.omx.exitEvent += lambda p, code: self.done()
+        #self.omx = OMXPlayer(self.vid_data.url, args=args)
+        #self.omx.exitEvent += lambda p, code: self.stop()
+        if Player.status != PlayerStatus.PAUSED:
+            media = self.vlc_instance.media_new(self.vid_data.url)
+            media.get_mrl()
+            self.player.set_media(media)
+        self.player.play()
 
         self.start_timestamp = time.time() - self.start_time
 
-        if Player.current_volume == 0:
-            self.omx.mute()
-
-        logging.info("Started OMXPlayer for {} at {}".format(self.vid_data.id, self.start_time))
+        logging.info("Started PyAudio for {} at {}".format(self.vid_data.id, self.start_time))
         Player.status = PlayerStatus.PLAYING
+
+    def pause(self):
+        if Player.status == PlayerStatus.PLAYING:
+            self.done()
+            self.player.pause()
+            Player.status = PlayerStatus.PAUSED
+        elif Player.status in (PlayerStatus.DOWNLOADING, PlayerStatus.LOADING_DATA):
+            self.vid_data.remove_ready_callback()
 
     def stop(self):
         Player.current_player = None
         if Player.status == PlayerStatus.PLAYING:
-            self.omx.quit() # mark player as dead before we block on quitting it
+            #self.omx.quit() # mark player as dead before we block on quitting it
+            self.done()
+            self.player.stop()
         elif Player.status in (PlayerStatus.DOWNLOADING, PlayerStatus.LOADING_DATA):
             self.vid_data.remove_ready_callback()
+
+    @classmethod
+    def isPaused(self):
+        return Player.status == PlayerStatus.PAUSED
 
     @classmethod
     def stop_current(self):
         if Player.current_player:
             Player.current_player.stop()
+
+    @classmethod
+    def pause_current(self):
+        if Player.current_player:
+            Player.current_player.pause()
 
     def get_time(self):
         if Player.status == PlayerStatus.PLAYING:
@@ -111,12 +137,6 @@ class Player:
         if Player.current_volume == None or vol != Player.current_volume:
             Player.current_volume = vol
 
-        if Player.current_player and Player.current_player.status == PlayerStatus.PLAYING:
-            if vol == 0:
-                Player.current_player.omx.mute()
-            else:
-                Player.current_player.omx.unmute()
-                Player.current_player.omx.set_volume(vol)
 
 class YoutubeDownloader(threading.Thread):
     def __init__(self, id, callback):
@@ -183,6 +203,7 @@ class VideoData:
             new_callback = lambda: None
 
         if self.streamable or self.downloaded:
+            new_callback()
             new_callback()
         self.ready_callback = new_callback
 
