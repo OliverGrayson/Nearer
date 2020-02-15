@@ -191,6 +191,7 @@ def on_status(status):
 
 def emit_done():
     logging.info("emitting 'done'")
+    print("emitting 'done'")
     socket.emit("done")
 
 @indicates_connection

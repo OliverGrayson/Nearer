@@ -47,8 +47,7 @@ class Player:
         self.vlc_instance = vlc.Instance()
         self.player = self.vlc_instance.media_player_new()
 
-        self.player.event_manager().event_attach(vlc.EventType.MediaPlayerEndReached, self.stop)
-        self.player.event_manager().event_attach(vlc.EventType.MediaPlayerStopped, self.stop)
+        self.player.event_manager().event_attach(vlc.EventType.MediaPlayerEndReached, lambda *args, **kwargs: self.stop())
 
         self.start_time = start_time
         self.done = done_callback
@@ -69,6 +68,7 @@ class Player:
         t.start()
 
     def __play(self):
+        print("status", Player.status)
         args = ["-o", "local"]
         if self.start_time != 0:
             args += ["--pos", get_timestamp(self.start_time)]
@@ -94,16 +94,17 @@ class Player:
 
     def pause(self):
         if Player.status == PlayerStatus.PLAYING:
-            self.done()
             self.player.pause()
             Player.status = PlayerStatus.PAUSED
         elif Player.status in (PlayerStatus.DOWNLOADING, PlayerStatus.LOADING_DATA):
             self.vid_data.remove_ready_callback()
 
     def stop(self):
+        print("status", Player.status)
         Player.current_player = None
-        if Player.status == PlayerStatus.PLAYING:
+        if Player.status == PlayerStatus.PLAYING or Player.status == PlayerStatus.PAUSED:
             #self.omx.quit() # mark player as dead before we block on quitting it
+            Player.status = PlayerStatus.STOPPED
             self.done()
             self.player.stop()
         elif Player.status in (PlayerStatus.DOWNLOADING, PlayerStatus.LOADING_DATA):
